@@ -55,7 +55,7 @@ public class TimeSpanGroupCollectionEditActivity extends ListActivity {
             if(result != null && !"".equals(result)) {
                 TimeSpanGroup gResult = TimeSpanGroup.valueOf(result);
                 if(requestCode > 0) {
-                    groupCollection.set(requestCode, gResult);
+                    groupCollection.set(requestCode - 1, gResult);
                     ((ArrayAdapter)getListView().getAdapter()).notifyDataSetInvalidated();
                 } else if(requestCode == 0) {
                     groupCollection.add(gResult);
@@ -113,7 +113,7 @@ public class TimeSpanGroupCollectionEditActivity extends ListActivity {
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 Intent call = new Intent(TimeSpanGroupCollectionEditActivity.this, TimeSpanGroupEditActivity.class);
                 call.putExtra(TimeSpanGroupEditActivity.GROUP_SPEC_EXTRA, groupCollection.get(i).toString());
-                startActivityForResult(call, i);
+                startActivityForResult(call, i + 1);
             }
         });
 
