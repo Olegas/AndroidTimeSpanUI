@@ -8,6 +8,7 @@
         android:id="@+id/btnAddGroup"
         android:text="@string/addGroup"
         android:layout_height="wrap_content"
+        android:drawableLeft="@android:drawable/ic_menu_add"
         android:layout_width="fill_parent" />
     <ListView
         android:layout_above="@id/btnAddGroup"
