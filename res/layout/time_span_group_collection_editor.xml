@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent">
+    <Button
+        android:layout_alignParentBottom="true"
+        android:id="@+id/btnAddGroup"
+        android:text="@string/addGroup"
+        android:layout_height="wrap_content"
+        android:layout_width="fill_parent" />
+    <ListView
+        android:layout_above="@id/btnAddGroup"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:id="@android:id/list" />
+</RelativeLayout>

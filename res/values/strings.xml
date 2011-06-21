@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="day_labels">
+        <item>Sun</item>
+        <item>Mon</item>
+        <item>Tue</item>
+        <item>Wed</item>
+        <item>Thu</item>
+        <item>Fri</item>
+        <item>Sat</item>
+    </string-array>
+    <string name="weekdays">Weekdays</string>
+    <string name="weekend">Weekend</string>
+    <string name="everyday">Everyday</string>
+    <string name="addGroup">Add time span</string>
+    <string name="timeSpanListCaption">Time spans list</string>
+    <string name="selectDays">At least one day must be selected. Use checkboxes at the right</string>
+    <string name="delItem">Delete span</string>
+</resources>

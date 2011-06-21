@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="day_labels">
+        <item>Вс</item>
+        <item>Пн</item>
+        <item>Вт</item>
+        <item>Ср</item>
+        <item>Чт</item>
+        <item>Пт</item>
+        <item>Сб</item>
+    </string-array>
+    <string name="weekdays">Будни</string>
+    <string name="weekend">Выходные</string>
+    <string name="everyday">Каждый день</string>
+    <string name="addGroup">Добавить интервал</string>
+    <string name="timeSpanListCaption">Список временных интервалов</string>
+    <string name="selectDays">Нужно выбрать хотя бы один день. Используйте панель справа.</string>
+    <string name="delItem">Удалить интервал</string>
+</resources>
