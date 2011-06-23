@@ -19,4 +19,5 @@
     <string name="saveChanges">Сохранить изменения?</string>
     <string name="yes">Да</string>
     <string name="no">Нет</string>
+    <string name="anytime">В любое время</string>
 </resources>

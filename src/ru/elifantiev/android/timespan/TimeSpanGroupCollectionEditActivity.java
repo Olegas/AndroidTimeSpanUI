@@ -34,7 +34,7 @@ public class TimeSpanGroupCollectionEditActivity extends ListActivity {
 
     static final String GROUP_SPEC_EXTRA = "ru.elifantiev.android.timespan.GROUP_SPEC_EXTRA";
 
-    private List<TimeSpanGroup> groupCollection;
+    private List<TimeSpanGroup> groupCollection = new ArrayList<TimeSpanGroup>();
 
     private Button btnAddNew;
 
@@ -94,11 +94,7 @@ public class TimeSpanGroupCollectionEditActivity extends ListActivity {
 
         String spec = getIntent().getStringExtra(GROUP_SPEC_EXTRA);
         if(spec != null && !"".equals(spec))
-            groupCollection = new ArrayList<TimeSpanGroup>(TimeSpanGroupCollection.valueOf(spec));
-        else {
-            finish();
-            return;
-        }
+            groupCollection.addAll(TimeSpanGroupCollection.valueOf(spec));
 
         ListView list = getListView();
 

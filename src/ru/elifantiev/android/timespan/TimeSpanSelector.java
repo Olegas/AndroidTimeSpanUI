@@ -19,6 +19,7 @@ package ru.elifantiev.android.timespan;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.TextView;
@@ -50,7 +51,9 @@ public class TimeSpanSelector extends TextView {
     }
 
     private void init() {
-        setValue(Arrays.asList(defaultValue));
+        setEllipsize(TextUtils.TruncateAt.MARQUEE);
+        setSingleLine(true);
+        setText(getContext().getString(R.string.anytime));
         setOnClickListener(new OnClickListener() {
             public void onClick(View view) {
                 Intent call = new Intent(getContext(), TimeSpanGroupCollectionEditActivity.class);
@@ -74,10 +77,14 @@ public class TimeSpanSelector extends TextView {
     }
 
     private void setValueInternal(Collection<TimeSpanGroup> groups) {
-        StringBuilder result = new StringBuilder();
-        for (TimeSpanGroup group : groups)
-            result.append(group.toReadableString(getContext())).append("\n");
-        setText(result.toString());
+        if(groups.size() > 0) {
+            StringBuilder result = new StringBuilder();
+            for (TimeSpanGroup group : groups)
+                result.append(group.toReadableString(getContext())).append("; ");
+            setText(result.toString());
+        }
+        else
+            setText(getContext().getString(R.string.anytime));
     }
 
     public void setOnChangeListener(OnChangeListener listener) {
@@ -91,7 +98,7 @@ public class TimeSpanSelector extends TextView {
     public boolean handleActivityResult(Intent data, int requestCode) {
         if(requestCode == EDIT_TIME_SPEC_REQUEST && data != null) {
             String spec = data.getStringExtra(TimeSpanGroupCollectionEditActivity.GROUP_SPEC_EXTRA);
-            if(spec != null && !"".equals(spec)) {
+            if(spec != null) {
                 Collection<TimeSpanGroup> result = TimeSpanGroupCollection.valueOf(spec);
                 if(listener != null)
                     listener.onChange(this, result);
