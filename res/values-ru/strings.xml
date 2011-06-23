@@ -16,4 +16,7 @@
     <string name="timeSpanListCaption">Список временных интервалов</string>
     <string name="selectDays">Нужно выбрать хотя бы один день. Используйте панель справа.</string>
     <string name="delItem">Удалить интервал</string>
+    <string name="saveChanges">Сохранить изменения?</string>
+    <string name="yes">Да</string>
+    <string name="no">Нет</string>
 </resources>

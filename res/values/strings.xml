@@ -16,4 +16,7 @@
     <string name="timeSpanListCaption">Time spans list</string>
     <string name="selectDays">At least one day must be selected. Use checkboxes at the right</string>
     <string name="delItem">Delete span</string>
+    <string name="saveChanges">Save changes?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
 </resources>

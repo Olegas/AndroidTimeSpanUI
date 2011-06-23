@@ -17,6 +17,9 @@
 package ru.elifantiev.android.timespan;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
@@ -25,17 +28,38 @@ public class TimeSpanGroupEditActivity extends Activity {
 
     final static String GROUP_SPEC_EXTRA = "ru.elifantiev.android.timespan.GROUP_SPEC_EXTRA";
     private TimeSpanGroupEditor groupEditor;
+    private String initialGroup = "0:0-1440";
 
     @Override
     public void onBackPressed() {
-        if(groupEditor.getValue().getDayMask() == 0) {
-            Toast.makeText(this, R.string.selectDays, Toast.LENGTH_LONG).show();
-        } else {
-            Intent result = new Intent();
-            result.putExtra(GROUP_SPEC_EXTRA, groupEditor.getValue().toString());
-            setResult(RESULT_OK, result);
-            finish();
+        final TimeSpanGroup g = groupEditor.getValue();
+        if(!initialGroup.equals(g.toString())) {
+            if(g.getDayMask() == 0) {
+                Toast.makeText(this, R.string.selectDays, Toast.LENGTH_LONG).show();
+            } else {
+                new AlertDialog.Builder(this)
+                    .setMessage(getString(R.string.saveChanges))
+                    .setCancelable(false)
+                    .setPositiveButton(getString(R.string.yes), new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            Intent result = new Intent();
+                            result.putExtra(GROUP_SPEC_EXTRA, g.toString());
+                            setResult(RESULT_OK, result);
+                            finish();
+                        }
+                    })
+                    .setNegativeButton(getString(R.string.no), new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            dialog.cancel();
+                            finish();
+                        }
+                    })
+                    .create()
+                    .show();
+            }
         }
+        else
+            finish();
     }
 
     @Override
@@ -48,6 +72,7 @@ public class TimeSpanGroupEditActivity extends Activity {
         String spanSpec = call.getStringExtra(GROUP_SPEC_EXTRA);
         if(spanSpec != null && !"".equals(spanSpec)) {
             groupEditor.setValue(TimeSpanGroup.valueOf(spanSpec));
+            initialGroup = groupEditor.getValue().toString();
         }
     }
 }
