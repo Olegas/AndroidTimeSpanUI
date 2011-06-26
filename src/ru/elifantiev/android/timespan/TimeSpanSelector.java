@@ -16,7 +16,6 @@
 
 package ru.elifantiev.android.timespan;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.text.TextUtils;
@@ -24,14 +23,16 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.widget.TextView;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 public class TimeSpanSelector extends TextView {
 
     static final int EDIT_TIME_SPEC_REQUEST = 10000;
 
     private List<TimeSpanGroup> groups = new ArrayList<TimeSpanGroup>();
-    private TimeSpanGroup defaultValue = TimeSpanGroup.anytimeGroup();
     private OnChangeListener listener = null;
     private ActivityRequestHandler activityRequestHandler = null;
 
