@@ -52,6 +52,9 @@ public class TimeSpanSelector extends TextView {
 
     private void init() {
         setEllipsize(TextUtils.TruncateAt.MARQUEE);
+        setTextColor(R.color.black);
+        setFocusable(true);
+        setBackgroundDrawable(getContext().getResources().getDrawable(R.drawable.keyboard_key_feedback_more_background));
         setSingleLine(true);
         setText(getContext().getString(R.string.anytime));
         setOnClickListener(new OnClickListener() {
