@@ -48,10 +48,12 @@ public class TimeSpanGroupCollection {
      * Возвращает минимальное время ожидания до момента, когда данная группа будет актуальна
      * @param groupCollection группа
      * @return Минимальное время ожидания в минутах.
-     * Возвращает Integer.MAX_VALUE если группа пустая
      * Возвращает 0 если группа активна в данный момент
      */
     public static int getMinutesTillBecomeActive(Collection<TimeSpanGroup> groupCollection) {
+        if(groupCollection.size() == 0)
+            return 0;
+
         int minWait = Integer.MAX_VALUE;
         for(TimeSpanGroup group : groupCollection) {
             int thisWait = group.minutesTillBecomeAvailable();
