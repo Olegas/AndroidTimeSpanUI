@@ -24,6 +24,7 @@ import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.GestureDetector;
+import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -174,6 +175,8 @@ public class TimeSpanGroupEditor extends View implements
     }
 
     public void onShowPress(MotionEvent motionEvent) {
+        if(activeSpan != null)
+            performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
     }
 
     public boolean onSingleTapUp(MotionEvent motionEvent) {
