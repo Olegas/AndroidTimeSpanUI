@@ -51,7 +51,7 @@ public class TimeSpanGroup implements Comparable<TimeSpanGroup> {
     }
 
     public static TimeSpanGroup fromSpanCollection(int dayMask, Collection<TimeSpan> spans) throws IllegalArgumentException {
-        if(dayMask < 0 || dayMask > EVERYDAY)
+        if (dayMask < 0 || dayMask > EVERYDAY)
             throw new IllegalArgumentException("Incorrect days mask");
 
         return new TimeSpanGroup(dayMask, spans);
@@ -62,18 +62,18 @@ public class TimeSpanGroup implements Comparable<TimeSpanGroup> {
     }
 
     public static TimeSpanGroup fromVisualSpanCollection(int dayMask, Collection<VisualTimeSpan> spans) throws IllegalArgumentException {
-        if(dayMask < 0 || dayMask > EVERYDAY)
+        if (dayMask < 0 || dayMask > EVERYDAY)
             throw new IllegalArgumentException("Incorrect days mask");
 
         TimeSpanGroup result = new TimeSpanGroup(dayMask);
-        for(VisualTimeSpan span : spans) {
+        for (VisualTimeSpan span : spans) {
             result.storage.add(span.toTimeSpan());
         }
         return result;
     }
 
     public static TimeSpanGroup emptyGroup(int dayMask) throws IllegalArgumentException {
-        if(dayMask < 0 || dayMask > EVERYDAY)
+        if (dayMask < 0 || dayMask > EVERYDAY)
             throw new IllegalArgumentException("Incorrect days mask");
         return new TimeSpanGroup(dayMask);
     }
@@ -85,26 +85,26 @@ public class TimeSpanGroup implements Comparable<TimeSpanGroup> {
     public static TimeSpanGroup valueOf(String serialized) throws IllegalArgumentException {
         int dayPart = serialized.indexOf(':');
 
-        if(dayPart == -1)
+        if (dayPart == -1)
             throw new IllegalArgumentException("Trying to parse from wrong format: " + serialized);
 
         int dayMask;
         String[] spans;
         try {
-            dayMask = Integer.valueOf(serialized.substring(0, dayPart));
+            dayMask = Integer.parseInt(serialized.substring(0, dayPart));
             spans = serialized.substring(dayPart + 1).split(",");
 
-            if(dayMask < 0 || dayMask > EVERYDAY)
+            if (dayMask < 0 || dayMask > EVERYDAY)
                 throw new IllegalArgumentException("Invalid day mask");
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException(e.getMessage());
-        } catch(StringIndexOutOfBoundsException e) {
+        } catch (StringIndexOutOfBoundsException e) {
             throw new IllegalArgumentException(e.getMessage());
         }
 
         TimeSpanGroup result = new TimeSpanGroup(dayMask);
 
-        for(String span : spans) {
+        for (String span : spans) {
             result.storage.add(TimeSpan.valueOf(span));
         }
 
@@ -112,55 +112,53 @@ public class TimeSpanGroup implements Comparable<TimeSpanGroup> {
     }
 
     public int minutesTillBecomeAvailable() {
-        Calendar cal = Calendar.getInstance();
+        return minutesTillBecomeAvailable(Calendar.getInstance());
+    }
 
-        int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK) - 1;
+    public int minutesTillBecomeAvailable(Calendar cal) {
+        int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
         int myDays = (dayMask | (dayMask << 7)) >> dayOfWeek;
         int daysCount = -1;
 
+        if (isToday(cal)) { // Сегодня группа активны
+            if (isActual(cal)) // Может активны до сих пор?
+                return 0;
+            else { // Нет? Значит проверим когда ближайший период активности.
+                int minSpanDelta = Integer.MAX_VALUE;
+                for (TimeSpan span : storage) {
+                    int tillThis = span.minutesTillBecomeActual(cal);
+                    if (tillThis > 0 && minSpanDelta > tillThis)
+                        minSpanDelta = tillThis;
+                }
+                if (minSpanDelta != Integer.MAX_VALUE) // no any
+                    return minSpanDelta;
+            }
+        }
+
+        // Сегодня не группа не активна? Найдем ближайший день когда будет
         for (int i = 0; i < 7; i++) {
             if ((myDays & (1 << i)) != 0) {
-                daysCount = i * 1440;
+                daysCount = (i + 1) * 1440;
                 break;
             }
         }
 
         if (daysCount == -1) {
-            Log.e("TimeSpan", "Unpredictable days count till becoming actual");
-            daysCount = 0;
-        }
-
-        if (daysCount == 0) {
-            if (isActual())
-                return 0;
-            else {
-                int minSpanDelta = Integer.MAX_VALUE;
-                for(TimeSpan span : storage) {
-                    int tillThis = span.minutesTillBecomeActual(cal);
-                    if(tillThis > 0 && minSpanDelta > tillThis)
-                        minSpanDelta = tillThis;
-                }
-                if(minSpanDelta != Integer.MAX_VALUE) // no any
-                    return minSpanDelta;
-                else
-                    // Значит не нашли ни одного промежутка, который еще сегодня не случился,
-                    // значит случится через неделю
-                    daysCount = 6 * 1440;
-            }
+            throw new IllegalStateException("Wrong time span state");
         }
 
         return daysCount + storage.first().getTimeFrom() - TimeSpan.getCurrentMinutes(cal);
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append(dayMask).append(":");
         Iterator<TimeSpan> i = storage.iterator();
-        if(i.hasNext())
-            while(true) {
+        if (i.hasNext())
+            while (true) {
                 builder.append(i.next().toString());
-                if(i.hasNext())
+                if (i.hasNext())
                     builder.append(",");
                 else
                     break;
@@ -169,17 +167,22 @@ public class TimeSpanGroup implements Comparable<TimeSpanGroup> {
     }
 
     public boolean isToday() {
-        Calendar cal = Calendar.getInstance();
-        int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
+        return isToday(Calendar.getInstance());
+    }
 
+    boolean isToday(Calendar cal) {
+        int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
         return (((1 << (dayOfWeek - 1)) & dayMask) != 0);
     }
 
     public boolean isActual() {
-        Calendar cal = Calendar.getInstance();
-        if (isToday()) {
-            for(TimeSpan span : storage)
-                if(span.isActual(cal))
+        return isActual(Calendar.getInstance());
+    }
+
+    boolean isActual(Calendar cal) {
+        if (isToday(cal)) {
+            for (TimeSpan span : storage)
+                if (span.isActual(cal))
                     return true;
         }
         return false;
@@ -190,17 +193,17 @@ public class TimeSpanGroup implements Comparable<TimeSpanGroup> {
         Resources resources = ctx.getResources();
         String[] dayLabels = resources.getStringArray(R.array.day_labels);
         boolean isFirst = true;
-        if(dayMask == EVERYDAY)
+        if (dayMask == EVERYDAY)
             builder.append(resources.getString(R.string.everyday));
-        else if(dayMask == 65)
+        else if (dayMask == 65)
             builder.append(resources.getString(R.string.weekend));
-        else if(dayMask == 62)
+        else if (dayMask == 62)
             builder.append(resources.getString(R.string.weekdays));
         else {
-            for(int i = 0; i < 7; i++) {
+            for (int i = 0; i < 7; i++) {
                 int d1 = dayMask & (1 << i);
-                if(d1 != 0) {
-                    if(!isFirst)
+                if (d1 != 0) {
+                    if (!isFirst)
                         builder.append(", ");
                     else
                         isFirst = false;
@@ -210,9 +213,9 @@ public class TimeSpanGroup implements Comparable<TimeSpanGroup> {
         }
         builder.append(": ");
         isFirst = true;
-        for(TimeSpan span: storage) {
-            if(isFirst)
-               isFirst = false;
+        for (TimeSpan span : storage) {
+            if (isFirst)
+                isFirst = false;
             else
                 builder.append(", ");
             builder.append(span.toReadableString());
@@ -224,8 +227,8 @@ public class TimeSpanGroup implements Comparable<TimeSpanGroup> {
         return dayMask;
     }
 
-    public Collection<TimeSpan> getCollection() {
-        return Collections.unmodifiableCollection(storage);
+    public TreeSet<TimeSpan> getCollection() {
+        return new TreeSet<TimeSpan>(storage);
     }
 
     @Override
@@ -246,11 +249,11 @@ public class TimeSpanGroup implements Comparable<TimeSpanGroup> {
     }
 
     public int compareTo(TimeSpanGroup timeSpanGroup) {
-        if(dayMask != timeSpanGroup.dayMask) {
-            for(int i = 0; i < 7; i++) {
+        if (dayMask != timeSpanGroup.dayMask) {
+            for (int i = 0; i < 7; i++) {
                 int d1 = dayMask & (1 << i);
                 int d2 = timeSpanGroup.dayMask & (1 << i);
-                if(d2 != d1)
+                if (d2 != d1)
                     return d1 - d2;
             }
         }
@@ -260,13 +263,12 @@ public class TimeSpanGroup implements Comparable<TimeSpanGroup> {
 
         while (iSelf.hasNext()) {
             TimeSpan my = iSelf.next();
-            if(iHis.hasNext()) {
+            if (iHis.hasNext()) {
                 TimeSpan his = iHis.next();
                 int myStart = my.getTimeFrom(), hisStart = his.getTimeFrom();
-                if(myStart != hisStart)
+                if (myStart != hisStart)
                     return hisStart - myStart;
-            }
-            else
+            } else
                 return 1;
         }
         return iHis.hasNext() ? -1 : 0;

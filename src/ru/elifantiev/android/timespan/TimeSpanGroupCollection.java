@@ -55,8 +55,9 @@ public class TimeSpanGroupCollection {
             return 0;
 
         int minWait = Integer.MAX_VALUE;
+        Calendar cal = Calendar.getInstance();
         for(TimeSpanGroup group : groupCollection) {
-            int thisWait = group.minutesTillBecomeAvailable();
+            int thisWait = group.minutesTillBecomeAvailable(cal);
             if(thisWait < minWait)
                 minWait = thisWait;
         }
@@ -68,7 +69,7 @@ public class TimeSpanGroupCollection {
         Calendar cal = Calendar.getInstance();
         int mNow = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE);
         for(TimeSpanGroup group : groupCollection) {
-            if(group.isToday()) {
+            if(group.isToday(cal)) {
                 for(TimeSpan span : group.getCollection()) {
                     int sLeft = span.getTimeFrom();
                     int sRight = span.getTimeTo();
