@@ -37,6 +37,7 @@ public class TimeSpanGroupCollectionEditActivity extends ListActivity {
     private List<TimeSpanGroup> groupCollection = new ArrayList<TimeSpanGroup>();
 
     private Button btnAddNew;
+    private boolean changed = false;
 
     @Override
     public void onBackPressed() {
@@ -44,7 +45,7 @@ public class TimeSpanGroupCollectionEditActivity extends ListActivity {
         result.putExtra(
                 GROUP_SPEC_EXTRA,
                 TimeSpanGroupCollection.toString(new TreeSet<TimeSpanGroup>(groupCollection)));
-        setResult(RESULT_OK, result);
+        setResult(changed ? RESULT_OK : RESULT_CANCELED, result);
         finish();
     }
 
@@ -54,6 +55,7 @@ public class TimeSpanGroupCollectionEditActivity extends ListActivity {
             String result = data.getStringExtra(TimeSpanGroupEditActivity.GROUP_SPEC_EXTRA);
             if(result != null && !"".equals(result)) {
                 TimeSpanGroup gResult = TimeSpanGroup.valueOf(result);
+                changed = true;
                 if(requestCode > 0) {
                     groupCollection.set(requestCode - 1, gResult);
                     ((ArrayAdapter)getListView().getAdapter()).notifyDataSetInvalidated();
@@ -74,6 +76,7 @@ public class TimeSpanGroupCollectionEditActivity extends ListActivity {
             ArrayAdapter adapter = (ArrayAdapter)(list.getAdapter());
             groupCollection.remove(info.position);
             adapter.notifyDataSetChanged();
+            changed = true;
             return true;
         }
         return false;

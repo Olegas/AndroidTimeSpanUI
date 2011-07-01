@@ -16,6 +16,7 @@
 
 package ru.elifantiev.android.timespan;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.text.TextUtils;
@@ -99,15 +100,17 @@ public class TimeSpanSelector extends TextView {
         this.activityRequestHandler = handler;
     }
 
-    public boolean handleActivityResult(Intent data, int requestCode) {
+    public boolean handleActivityResult(Intent data, int requestCode, int resultCode) {
         if(requestCode == EDIT_TIME_SPEC_REQUEST && data != null) {
-            String spec = data.getStringExtra(TimeSpanGroupCollectionEditActivity.GROUP_SPEC_EXTRA);
-            if(spec != null) {
-                Collection<TimeSpanGroup> result = TimeSpanGroupCollection.valueOf(spec);
-                if(listener != null)
-                    listener.onChange(this, result);
-                setValue(result);
-                return true;
+            if(resultCode == Activity.RESULT_OK) {
+                String spec = data.getStringExtra(TimeSpanGroupCollectionEditActivity.GROUP_SPEC_EXTRA);
+                if(spec != null) {
+                    Collection<TimeSpanGroup> result = TimeSpanGroupCollection.valueOf(spec);
+                    if(listener != null)
+                        listener.onChange(this, result);
+                    setValue(result);
+                    return true;
+                }
             }
         }
         return false;

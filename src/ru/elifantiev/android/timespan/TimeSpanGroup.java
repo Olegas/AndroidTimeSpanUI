@@ -191,7 +191,7 @@ public class TimeSpanGroup implements Comparable<TimeSpanGroup> {
     public String toReadableString(Context ctx) {
         StringBuilder builder = new StringBuilder();
         Resources resources = ctx.getResources();
-        String[] dayLabels = resources.getStringArray(R.array.day_labels);
+        String[] dayLabels = resources.getStringArray(ru.elifantiev.android.timespan.R.array.day_labels);
         boolean isFirst = true;
         if (dayMask == EVERYDAY)
             builder.append(resources.getString(R.string.everyday));
