@@ -268,6 +268,11 @@ public class TimeSpanGroup implements Comparable<TimeSpanGroup> {
                 int myStart = my.getTimeFrom(), hisStart = his.getTimeFrom();
                 if (myStart != hisStart)
                     return hisStart - myStart;
+                else {
+                    int myEnd = my.getTimeTo(), hisEnd = his.getTimeTo();
+                    if(myEnd != hisEnd)
+                        return hisEnd - myEnd;
+                }
             } else
                 return 1;
         }
