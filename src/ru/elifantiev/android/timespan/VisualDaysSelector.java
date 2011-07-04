@@ -19,7 +19,9 @@ package ru.elifantiev.android.timespan;
 
 import android.content.Context;
 import android.graphics.*;
+import android.util.DisplayMetrics;
 import android.view.MotionEvent;
+import android.view.WindowManager;
 
 class VisualDaysSelector {
 
@@ -42,9 +44,12 @@ class VisualDaysSelector {
         if(labels.length != 7)
             throw new IllegalArgumentException("Invalid labels array specified in library resources");
 
+        DrawParameters drawParameters = new DrawParameters(ctx);
+
         pText = new Paint();
-        pText.setStrokeWidth(2);
+        pText.setStrokeWidth(1);
         pText.setTextAlign(Paint.Align.CENTER);
+        pText.setTextSize(15 * drawParameters.density);
         pText.setAntiAlias(true);
         pText.setColor(0xFFFFFFFF);
         pText.setStyle(Paint.Style.FILL_AND_STROKE);

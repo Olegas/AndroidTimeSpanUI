@@ -22,11 +22,9 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.GestureDetector;
-import android.view.HapticFeedbackConstants;
-import android.view.MotionEvent;
-import android.view.View;
+import android.view.*;
 
 import java.util.Set;
 import java.util.TreeSet;
@@ -55,6 +53,8 @@ public class TimeSpanGroupEditor extends View implements
     private VisualTimeSpan.HitTestResult activeSpanMode = VisualTimeSpan.HitTestResult.NOWHERE;
     private VisualDaysSelector daysSelector;
     private float dragStart = 0f;
+    DrawParameters drawParameters;
+
 
     public TimeSpanGroupEditor(Context context) {
         super(context);
@@ -75,6 +75,8 @@ public class TimeSpanGroupEditor extends View implements
         gestureDetector = new GestureDetector(getContext(), this);
         gestureDetector.setOnDoubleTapListener(this);
 
+        drawParameters = new DrawParameters(getContext());
+
         pOuter = new Paint();
         pOuter.setColor(Color.GRAY);
         pOuter.setStrokeWidth(2);
@@ -82,8 +84,8 @@ public class TimeSpanGroupEditor extends View implements
 
         pLine = new Paint();
         pLine.setColor(Color.GRAY);
-        pLine.setStrokeWidth(2);
-        pLine.setTextSize(15);
+        pLine.setStrokeWidth(1);
+        pLine.setTextSize(11 * drawParameters.density);
         pLine.setAntiAlias(true);
         pLine.setStyle(Paint.Style.FILL_AND_STROKE);
 
@@ -113,9 +115,9 @@ public class TimeSpanGroupEditor extends View implements
         isMeasured = true;
         boundaries = new RectF(
             getPaddingLeft() + SIDE_PAD,
-            getPaddingTop() + TB_PAD,
-            w - getPaddingRight() - SIDE_PAD * 2 - DAY_SELECTOR_AREA_WIDTH,
-            h - getPaddingBottom() - TB_PAD);
+            getPaddingTop() + drawParameters.TB_PAD,
+            w - getPaddingRight() - SIDE_PAD * 2 - drawParameters.DAY_SELECTOR_AREA_WIDTH,
+            h - getPaddingBottom() - drawParameters.TB_PAD);
 
         scale.onSizeChange(w, h);
         drawScale();
@@ -127,10 +129,10 @@ public class TimeSpanGroupEditor extends View implements
             span.onSizeChanged(w, h, boundaries);
 
         daysSelector.onSizeChanged(w, h, new RectF(
-            w - getPaddingRight() - SIDE_PAD - DAY_SELECTOR_AREA_WIDTH,
-            getPaddingTop() + TB_PAD,
+            w - getPaddingRight() - SIDE_PAD - drawParameters.DAY_SELECTOR_AREA_WIDTH,
+            getPaddingTop() + drawParameters.TB_PAD,
             w - getPaddingRight() - SIDE_PAD,
-            h - getPaddingBottom() - TB_PAD
+            h - getPaddingBottom() - drawParameters.TB_PAD
         ));
 
         super.onSizeChanged(w, h, oldw, oldh);
@@ -151,7 +153,11 @@ public class TimeSpanGroupEditor extends View implements
             float offsetY = boundaries.top + boundaries.height() * i / 24;
             if(i != 0)
                 canvas.drawLine(boundaries.left, offsetY, boundaries.right, offsetY, pLine);
-            canvas.drawText(labels[i], boundaries.left + 10, offsetY + 20, pLine);
+            canvas.drawText(
+                    labels[i],
+                    boundaries.left + 10,
+                    offsetY + drawParameters.SCALE_LABEL_TOP_PADDING,
+                    pLine);
         }
     }
 
@@ -251,11 +257,11 @@ public class TimeSpanGroupEditor extends View implements
     }
 
     float screenToControl(float pixelVal) {
-        return pixelVal - TB_PAD;
+        return pixelVal - drawParameters.TB_PAD;
     }
 
     float controlToScreen(float pixelVal) {
-        return pixelVal + TB_PAD;
+        return pixelVal + drawParameters.TB_PAD;
     }
 
     float pixelToMinutes(float pixelVal) {

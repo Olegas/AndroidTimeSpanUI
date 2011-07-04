@@ -16,10 +16,28 @@
 
 package ru.elifantiev.android.timespan;
 
+import android.content.Context;
+import android.util.DisplayMetrics;
+import android.view.WindowManager;
+
 final class DrawParameters {
     final static int SIDE_PAD = 7;
-    final static int TB_PAD = 25;
+    final float TB_PAD;
     final static int KNOB_TOUCH_AREA = 25;
     final static int MIDDLE_AREA_PAD = 15;
-    final static int DAY_SELECTOR_AREA_WIDTH = 80;
+    final float DAY_SELECTOR_AREA_WIDTH;
+    final float SCALE_LABEL_TOP_PADDING;
+    final float density;
+
+    DrawParameters(Context context) {
+        DisplayMetrics metrics = new DisplayMetrics();
+        WindowManager wmgr = (WindowManager)context.getSystemService(Context.WINDOW_SERVICE);
+        wmgr.getDefaultDisplay().getMetrics(metrics);
+
+        density = metrics.density;
+
+        TB_PAD = 16 * density;
+        DAY_SELECTOR_AREA_WIDTH = 60 * density;
+        SCALE_LABEL_TOP_PADDING = 14 * density;
+    }
 }

@@ -18,8 +18,11 @@ package ru.elifantiev.android.timespan;
 
 
 import android.R;
+import android.content.Context;
 import android.graphics.*;
+import android.util.DisplayMetrics;
 import android.view.MotionEvent;
+import android.view.WindowManager;
 
 import static ru.elifantiev.android.timespan.DrawParameters.KNOB_TOUCH_AREA;
 import static ru.elifantiev.android.timespan.DrawParameters.MIDDLE_AREA_PAD;
@@ -30,7 +33,7 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
     private final static Paint pSelectionBoundary = initSelectionPaint();
     private final static Paint pSelection = initSelectionPaint2();
     private final static Paint pSelKnob = initKnobPaint();
-    private final static Paint pSpanText = initTextPaint();
+    private final Paint pSpanText;
     private final TimeSpanGroupEditor parent;
     private final float strokeWidth;
     private final Bitmap upArrow, downArrow;
@@ -64,10 +67,10 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
         return r;
     }
 
-    private static Paint initTextPaint() {
+    private Paint initTextPaint(float density) {
         Paint r  = new Paint();
         r.setStyle(Paint.Style.FILL_AND_STROKE);
-        r.setTextSize(30);
+        r.setTextSize(20 * density);
         r.setColor(0xFFFFFFFF);
         r.setAntiAlias(true);
         r.setTextAlign(Paint.Align.CENTER);
@@ -79,6 +82,9 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
     }
 
     private VisualTimeSpan(TimeSpanGroupEditor parent) {
+
+        pSpanText = initTextPaint(parent.drawParameters.density);
+
         this.parent = parent;
 
         pSpanText.getTextBounds("0", 0, 1, bounds);
