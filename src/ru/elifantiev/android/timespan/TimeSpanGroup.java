@@ -97,9 +97,9 @@ public class TimeSpanGroup implements Comparable<TimeSpanGroup> {
             if (dayMask < 0 || dayMask > EVERYDAY)
                 throw new IllegalArgumentException("Invalid day mask");
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(e.getMessage());
+            throw new IllegalArgumentException(e);
         } catch (StringIndexOutOfBoundsException e) {
-            throw new IllegalArgumentException(e.getMessage());
+            throw new IllegalArgumentException(e);
         }
 
         TimeSpanGroup result = new TimeSpanGroup(dayMask);
@@ -166,17 +166,9 @@ public class TimeSpanGroup implements Comparable<TimeSpanGroup> {
         return builder.toString();
     }
 
-    public boolean isToday() {
-        return isToday(Calendar.getInstance());
-    }
-
-    boolean isToday(Calendar cal) {
+    public boolean isToday(Calendar cal) {
         int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
         return (((1 << (dayOfWeek - 1)) & dayMask) != 0);
-    }
-
-    public boolean isActual() {
-        return isActual(Calendar.getInstance());
     }
 
     boolean isActual(Calendar cal) {
