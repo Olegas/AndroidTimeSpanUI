@@ -18,11 +18,8 @@ package ru.elifantiev.android.timespan;
 
 
 import android.R;
-import android.content.Context;
 import android.graphics.*;
-import android.util.DisplayMetrics;
 import android.view.MotionEvent;
-import android.view.WindowManager;
 
 import static ru.elifantiev.android.timespan.DrawParameters.KNOB_TOUCH_AREA;
 import static ru.elifantiev.android.timespan.DrawParameters.MIDDLE_AREA_PAD;
@@ -141,8 +138,8 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
         xMiddlePoint = boundaries.width() / 2;
 
         if (selectionTop == -1 && selectionBottom == -1) {
-            selectionTop =  parent.controlToScreen(parent.minutesToPixel(minutesTop));
-            selectionBottom = parent.controlToScreen(parent.minutesToPixel(minutesBottom));
+            selectionTop =  parent.controlToScreen(parent.minuteToPixelPoint(minutesTop));
+            selectionBottom = parent.controlToScreen(parent.minuteToPixelPoint(minutesBottom));
         }
 
         selection.onSizeChange(totalW, totalH);
@@ -177,9 +174,9 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
     private void drawSelection() {
         selection.reset();
 
-        minutesTop = Math.round(parent.pixelToMinutes(parent.screenToControl(selectionTop)));
-        minutesBottom = Math.round(parent.pixelToMinutes(parent.screenToControl(selectionBottom)));
-        float minutesSelected = Math.round(parent.pixelToMinutes(selectionBottom - selectionTop));
+        minutesTop = Math.round(parent.pixelPointToMinutes(parent.screenToControl(selectionTop)));
+        minutesBottom = Math.round(parent.pixelPointToMinutes(parent.screenToControl(selectionBottom)));
+        float minutesSelected = Math.round(parent.pixelAmountToMinutes(selectionBottom - selectionTop));
 
         Canvas sCanvas = selection.getCanvas();
         sCanvas.drawRoundRect(

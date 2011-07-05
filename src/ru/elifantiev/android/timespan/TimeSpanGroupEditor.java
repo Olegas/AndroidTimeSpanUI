@@ -22,7 +22,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.*;
 
@@ -34,11 +33,13 @@ import static ru.elifantiev.android.timespan.DrawParameters.*;
 
 public class TimeSpanGroupEditor extends View implements
         GestureDetector.OnGestureListener,
-        GestureDetector.OnDoubleTapListener {
+        GestureDetector.OnDoubleTapListener,
+        ScaleGestureDetector.OnScaleGestureListener {
 
-    private int currentTopBound = 0;
-    private float currentScale = 1.0f;
+    private int viewportTop = 8 * 60 + 45;
+    private int hoursOnScreen = 12;
     private GestureDetector gestureDetector;
+    private ScaleGestureDetector scaleGestureDetector;
     private Paint pOuter, pLine;
 
     private TreeSet<VisualTimeSpan> displayedSpans = new TreeSet<VisualTimeSpan>();
@@ -74,6 +75,7 @@ public class TimeSpanGroupEditor extends View implements
     private void init() {
         gestureDetector = new GestureDetector(getContext(), this);
         gestureDetector.setOnDoubleTapListener(this);
+        //scaleGestureDetector = new ScaleGestureDetector(getContext(), this);
 
         drawParameters = new DrawParameters(getContext());
 
@@ -95,9 +97,28 @@ public class TimeSpanGroupEditor extends View implements
         daysSelector = VisualDaysSelector.newInstance(getContext());
     }
 
+    private void changeViewport(float viewportDelta) {
+        int desiredValue = Math.round(viewportTop + viewportDelta);
+        if(desiredValue < 0)
+            desiredValue = 0;
+        else if(desiredValue > 1440 - hoursOnScreen * 60)
+            desiredValue = 1440 - hoursOnScreen * 60;
+        if(viewportTop != desiredValue) {
+            int d = viewportTop - desiredValue;
+            viewportTop = desiredValue;
+            scale.reset();
+            drawScale();
+            for(VisualTimeSpan span : displayedSpans)
+                span.setBounds(span.getUpperBound() + d, span.getLowerBound() + d);
+            invalidate();
+        }
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (gestureDetector.onTouchEvent(event))
+        /*if (scaleGestureDetector.onTouchEvent(event)) {
+            return true;
+        } else*/ if (gestureDetector.onTouchEvent(event))
             return true;
         else {
             if(activeSpan != null && event.getAction() == MotionEvent.ACTION_UP) {
@@ -149,12 +170,15 @@ public class TimeSpanGroupEditor extends View implements
     private void drawScale() {
         Canvas canvas = scale.getCanvas();
         canvas.drawRect(boundaries, pOuter);
-        for(int i = 0; i < 24; i++) {
-            float offsetY = boundaries.top + boundaries.height() * i / 24;
-            if(i != 0)
-                canvas.drawLine(boundaries.left, offsetY, boundaries.right, offsetY, pLine);
+
+        int extraMin = (60 - (viewportTop % 60)) % 60;
+        float offsetTop = minuteToPixelPoint(viewportTop + extraMin);
+
+        for(int i = 0; i < hoursOnScreen; i++) {
+            float offsetY = boundaries.top + offsetTop + boundaries.height() * i / hoursOnScreen;
+            canvas.drawLine(boundaries.left, offsetY, boundaries.right, offsetY, pLine);
             canvas.drawText(
-                    labels[i],
+                    labels[viewportTop / 60 + (extraMin > 0 ? 1 : 0) + i],
                     boundaries.left + 10,
                     offsetY + drawParameters.SCALE_LABEL_TOP_PADDING,
                     pLine);
@@ -194,8 +218,10 @@ public class TimeSpanGroupEditor extends View implements
     }
 
     public boolean onScroll(MotionEvent start, MotionEvent finish, float dX, float dY) {
-        if(activeSpan == null)
-            return false;
+        if(activeSpan == null) {
+            changeViewport(pixelAmountToMinutes(dY));
+            return true;
+        }
         float selectionTop = activeSpan.getUpperBound(), selectionBottom = activeSpan.getLowerBound();
         float val = alignValue(finish.getY());
         boolean alter = false;
@@ -264,12 +290,16 @@ public class TimeSpanGroupEditor extends View implements
         return pixelVal + drawParameters.TB_PAD;
     }
 
-    float pixelToMinutes(float pixelVal) {
-        return pixelVal * 1440 / boundaries.height();
+    float pixelPointToMinutes(float pixelVal) {
+        return (pixelVal * (hoursOnScreen * 60) / boundaries.height()) + viewportTop;
     }
 
-    float minutesToPixel(float minutes) {
-        return minutes * boundaries.height() / 1440;
+    float pixelAmountToMinutes(float pixelAmount) {
+        return pixelPointToMinutes(pixelAmount) - viewportTop;
+    }
+
+    float minuteToPixelPoint(float minutes) {
+        return (minutes - viewportTop) * boundaries.height() / (hoursOnScreen * 60);
     }
 
     /**
@@ -278,11 +308,10 @@ public class TimeSpanGroupEditor extends View implements
      * @return ближайшая пиксельная точка кратная 5 минутам относительно контрола
      */
     private float alignToSpan(float val) {
-        float minutesVal = pixelToMinutes(val);
+        float minutesVal = pixelPointToMinutes(val);
         double fiveSpan = Math.floor(minutesVal / 5) + (Math.floor(minutesVal % 5) >=3 ? 1 : 0);
-        return minutesToPixel((float)(fiveSpan * 5));
+        return minuteToPixelPoint((float) (fiveSpan * 5));
     }
-    //}
 
     private void appendSpan(VisualTimeSpan newOne) {
         displayedSpans.add(newOne);
@@ -365,7 +394,7 @@ public class TimeSpanGroupEditor extends View implements
                 }
             }
 
-            float minutesTapped = pixelToMinutes(screenToControl(motionEvent.getY()));
+            float minutesTapped = pixelPointToMinutes(screenToControl(motionEvent.getY()));
             appendSpan(VisualTimeSpan.newInstanceAtValues(this, minutesTapped - 90, minutesTapped + 90));
             invalidate();
             return true;
@@ -376,5 +405,24 @@ public class TimeSpanGroupEditor extends View implements
 
     public boolean onDoubleTapEvent(MotionEvent motionEvent) {
         return false;
+    }
+
+    @Override
+    public boolean onScale(ScaleGestureDetector scaleGestureDetector) {
+        if(scaleGestureDetector.getScaleFactor() > 2.0)
+            return true;
+        else
+            return false;
+    }
+
+    @Override
+    public boolean onScaleBegin(ScaleGestureDetector scaleGestureDetector) {
+        return true;
+    }
+
+    @Override
+    public void onScaleEnd(ScaleGestureDetector scaleGestureDetector) {
+        hoursOnScreen *= scaleGestureDetector.getScaleFactor();
+        invalidate();
     }
 }

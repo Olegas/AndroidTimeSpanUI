@@ -36,7 +36,7 @@ final class DrawParameters {
 
         density = metrics.density;
 
-        TB_PAD = 16 * density;
+        TB_PAD = 18 * density;
         DAY_SELECTOR_AREA_WIDTH = 60 * density;
         SCALE_LABEL_TOP_PADDING = 14 * density;
     }
