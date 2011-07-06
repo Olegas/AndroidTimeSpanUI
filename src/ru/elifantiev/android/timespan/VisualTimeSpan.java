@@ -27,8 +27,9 @@ import static ru.elifantiev.android.timespan.DrawParameters.MIDDLE_AREA_PAD;
 class VisualTimeSpan implements Comparable<VisualTimeSpan> {
 
     private final DrawLayer selection = new DrawLayer();
-    private final static Paint pSelectionBoundary = initSelectionPaint();
-    private final static Paint pSelection = initSelectionPaint2();
+    private final static Paint pSelectionBoundary = initBoundaryPaint(false);
+    private final static Paint pSelectionBoundaryEdit = initBoundaryPaint(true);
+    private final static Paint pSelection = initInnerPaint();
     private final static Paint pSelKnob = initKnobPaint();
     private final Paint pSpanText;
     private final TimeSpanGroupEditor parent;
@@ -36,21 +37,22 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
     private final Bitmap upArrow, downArrow;
 
     private float selectionTop = -1, selectionBottom = -1, xMiddlePoint;
+    private boolean editMode = false;
     private RectF topKnobBoundary, bottomKnobBoundary, middleArea, fullArea;
     private RectF boundaries;
     private Rect bounds = new Rect();
 
     float minutesTop = 0, minutesBottom = 1440;
 
-    private static Paint initSelectionPaint() {
+    private static Paint initBoundaryPaint(boolean isEdit) {
         Paint r = new Paint();
-        r.setColor(0xFF0000FF);
+        r.setColor(isEdit ? 0xFFFF0000 : 0xFF0000FF);
         r.setStrokeWidth(2);
         r.setStyle(Paint.Style.STROKE);
         return r;
     }
 
-    private static Paint initSelectionPaint2() {
+    private static Paint initInnerPaint() {
         Paint p  = new Paint();
         p.setColor(0x550000FF);
         p.setStyle(Paint.Style.FILL);
@@ -107,6 +109,21 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
         ret.minutesTop = minTop;
         ret.minutesBottom = minBottom;
         return ret;
+    }
+
+    boolean isEditMode() {
+        return editMode;
+    }
+
+    void toggleEditMode() {
+        setEditMode(!editMode);
+    }
+
+    void setEditMode(boolean editMode) {
+        if(this.editMode != editMode) {
+            this.editMode = editMode;
+            invalidate();
+        }
     }
 
     float getUpperBound() {
@@ -187,7 +204,7 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
                         selectionBottom),
                 10f,
                 10f,
-                pSelectionBoundary);
+                editMode ? pSelectionBoundaryEdit : pSelectionBoundary);
 
 
         sCanvas.drawRoundRect(
@@ -227,8 +244,8 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
             return HitTestResult.TOP_KNOB;
         if (bottomKnobBoundary.contains(mX, mY))
             return HitTestResult.BOTTOM_KNOB;
-        if (middleArea.contains(mX, mY))
-            return HitTestResult.MIDDLE_DRAG;
+       /* if (middleArea.contains(mX, mY))
+            return HitTestResult.MIDDLE_DRAG;*/
         if (fullArea.contains(mX, mY))
             return HitTestResult.JUST_IN;
         return HitTestResult.NOWHERE;

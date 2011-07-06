@@ -28,7 +28,7 @@ import android.view.*;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static ru.elifantiev.android.timespan.DrawParameters.*;
+import static ru.elifantiev.android.timespan.DrawParameters.SIDE_PAD;
 
 
 public class TimeSpanGroupEditor extends View implements
@@ -190,10 +190,10 @@ public class TimeSpanGroupEditor extends View implements
         activeSpanMode = VisualTimeSpan.HitTestResult.NOWHERE;
         for(VisualTimeSpan span : displayedSpans) {
             VisualTimeSpan.HitTestResult hitTest = span.hitTest(motionEvent);
-            if(hitTest != VisualTimeSpan.HitTestResult.NOWHERE && hitTest != VisualTimeSpan.HitTestResult.JUST_IN) {
+            if(hitTest != VisualTimeSpan.HitTestResult.NOWHERE) {
                 activeSpanMode = hitTest;
                 activeSpan = span;
-                if(hitTest == VisualTimeSpan.HitTestResult.MIDDLE_DRAG)
+                if(hitTest == VisualTimeSpan.HitTestResult.JUST_IN)
                     dragStart = motionEvent.getY();
                 break;
             }
@@ -218,7 +218,7 @@ public class TimeSpanGroupEditor extends View implements
     }
 
     public boolean onScroll(MotionEvent start, MotionEvent finish, float dX, float dY) {
-        if(activeSpan == null) {
+        if(activeSpan == null || !activeSpan.isEditMode()) {
             changeViewport(pixelAmountToMinutes(dY));
             return true;
         }
@@ -235,7 +235,7 @@ public class TimeSpanGroupEditor extends View implements
             if((alter = (selectionTop <= val && val <= boundaries.bottom)))
                 selectionBottom = val;
         }
-        else if(activeSpanMode == VisualTimeSpan.HitTestResult.MIDDLE_DRAG) {
+        else if(activeSpanMode == VisualTimeSpan.HitTestResult.JUST_IN) {
             float delta = val - dragStart;
             if(boundaries.top < activeSpan.getUpperBound() + delta &&
                     activeSpan.getLowerBound() + delta < boundaries.bottom) {
@@ -264,6 +264,11 @@ public class TimeSpanGroupEditor extends View implements
     }
 
     public void onLongPress(MotionEvent motionEvent) {
+        if(activeSpan != null) {
+            activeSpan.toggleEditMode();
+            activeSpan = null;
+            invalidate();
+        }
     }
 
     public boolean onFling(MotionEvent motionEvent, MotionEvent motionEvent1, float v, float v1) {
@@ -385,7 +390,7 @@ public class TimeSpanGroupEditor extends View implements
         if(boundaries.contains(motionEvent.getX(), motionEvent.getY())) {
             for(VisualTimeSpan span : displayedSpans) {
                 VisualTimeSpan.HitTestResult hitTestResult = span.hitTest(motionEvent);
-                if(hitTestResult == VisualTimeSpan.HitTestResult.JUST_IN || hitTestResult == VisualTimeSpan.HitTestResult.MIDDLE_DRAG) {
+                if(hitTestResult == VisualTimeSpan.HitTestResult.JUST_IN) {
                     if(displayedSpans.size() > 1) {
                         displayedSpans.remove(span);
                         invalidate();
