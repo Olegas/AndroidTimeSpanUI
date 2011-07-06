@@ -7,4 +7,5 @@
         <activity android:name=".TimeSpanGroupEditActivity" android:theme="@android:style/Theme.NoTitleBar" />
         <activity android:name=".TimeSpanGroupCollectionEditActivity" android:label="@string/timeSpanListCaption" />
     </application>
+    <uses-sdk android:minSdkVersion="7" android:targetSdkVersion="8" />
 </manifest> 
