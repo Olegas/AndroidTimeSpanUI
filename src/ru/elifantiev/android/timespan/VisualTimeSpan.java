@@ -19,6 +19,7 @@ package ru.elifantiev.android.timespan;
 
 import android.R;
 import android.graphics.*;
+import android.util.Log;
 import android.view.MotionEvent;
 
 import static ru.elifantiev.android.timespan.DrawParameters.KNOB_TOUCH_AREA;
@@ -36,13 +37,13 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
     private final float strokeWidth;
     private final Bitmap upArrow, downArrow;
 
-    private float selectionTop = -1, selectionBottom = -1, xMiddlePoint;
+    private float xMiddlePoint;
     private boolean editMode = false;
     private RectF topKnobBoundary, bottomKnobBoundary, middleArea, fullArea;
     private RectF boundaries;
     private Rect bounds = new Rect();
 
-    float minutesTop = 0, minutesBottom = 1440;
+    int minutesTop = 0, minutesBottom = 1440;
 
     private static Paint initBoundaryPaint(boolean isEdit) {
         Paint r = new Paint();
@@ -77,7 +78,7 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
     }
 
     TimeSpan toTimeSpan() {
-        return new TimeSpan((int)minutesTop, (int)minutesBottom);
+        return new TimeSpan(minutesTop, minutesBottom);
     }
 
     private VisualTimeSpan(TimeSpanGroupEditor parent) {
@@ -106,8 +107,8 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
 
     static VisualTimeSpan newInstanceAtValues(TimeSpanGroupEditor parent, float minTop, float minBottom) {
         VisualTimeSpan ret = new VisualTimeSpan(parent);
-        ret.minutesTop = minTop;
-        ret.minutesBottom = minBottom;
+        ret.minutesTop = (int)minTop;
+        ret.minutesBottom = (int)minBottom;
         return ret;
     }
 
@@ -126,23 +127,34 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
         }
     }
 
-    float getUpperBound() {
-        return selectionTop;
+    int getUpperBound() {
+        return minutesTop;
     }
 
-    float getLowerBound() {
-        return selectionBottom;
+    int getLowerBound() {
+        return minutesBottom;
     }
 
-    void setBounds(float upper, float lower) {
-        selectionTop = upper;
-        selectionBottom = lower;
+    void moveBy(int minutes) {
+        minutesTop += minutes;
+        minutesBottom += minutes;
+        if(minutesTop < 0)
+            minutesTop = 0;
+        if(minutesBottom > 1440)
+            minutesBottom = 1440;
         invalidate();
     }
 
-    private void invalidate() {
+    void setBounds(int upper, int lower) {
+        minutesTop = upper;
+        minutesBottom = lower;
+        invalidate();
+    }
+
+    void invalidate() {
         recalcBoundaries();
         drawSelection();
+        Log.d("VTS redraw", String.format("%d:%d", minutesTop, minutesBottom));
     }
 
     void release() {
@@ -153,11 +165,6 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
         this.boundaries = boundaries;
 
         xMiddlePoint = boundaries.width() / 2;
-
-        if (selectionTop == -1 && selectionBottom == -1) {
-            selectionTop =  parent.controlToScreen(parent.minuteToPixelPoint(minutesTop));
-            selectionBottom = parent.controlToScreen(parent.minuteToPixelPoint(minutesBottom));
-        }
 
         selection.onSizeChange(totalW, totalH);
         recalcBoundaries();
@@ -170,38 +177,40 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
 
     private void recalcBoundaries() {
 
+        float pixelTop = parent.controlToScreen(parent.minuteToPixelPoint(minutesTop));
+        float pixelBottom = parent.controlToScreen(parent.minuteToPixelPoint(minutesBottom));
         topKnobBoundary = new RectF(
                 xMiddlePoint - KNOB_TOUCH_AREA,
-                selectionTop - KNOB_TOUCH_AREA,
+                pixelTop - KNOB_TOUCH_AREA,
                 xMiddlePoint + KNOB_TOUCH_AREA,
-                selectionTop + KNOB_TOUCH_AREA);
+                pixelTop + KNOB_TOUCH_AREA);
 
         bottomKnobBoundary = new RectF(
                 xMiddlePoint - KNOB_TOUCH_AREA,
-                selectionBottom - KNOB_TOUCH_AREA,
+                pixelBottom - KNOB_TOUCH_AREA,
                 xMiddlePoint + KNOB_TOUCH_AREA,
-                selectionBottom + KNOB_TOUCH_AREA);
+                pixelBottom + KNOB_TOUCH_AREA);
 
-        middleArea = new RectF(boundaries.left + MIDDLE_AREA_PAD, selectionTop + MIDDLE_AREA_PAD,
-                boundaries.right - MIDDLE_AREA_PAD, selectionBottom - MIDDLE_AREA_PAD);
+        middleArea = new RectF(boundaries.left + MIDDLE_AREA_PAD, Math.max(boundaries.top, pixelTop) + MIDDLE_AREA_PAD,
+                boundaries.right - MIDDLE_AREA_PAD, Math.min(boundaries.bottom, pixelBottom) - MIDDLE_AREA_PAD);
 
-        fullArea = new RectF(boundaries.left, selectionTop, boundaries.right, selectionBottom);
+        fullArea = new RectF(boundaries.left, pixelTop, boundaries.right, pixelBottom);
     }
 
     private void drawSelection() {
         selection.reset();
 
-        minutesTop = Math.round(parent.pixelPointToMinutes(parent.screenToControl(selectionTop)));
-        minutesBottom = Math.round(parent.pixelPointToMinutes(parent.screenToControl(selectionBottom)));
-        float minutesSelected = Math.round(parent.pixelAmountToMinutes(selectionBottom - selectionTop));
+        float pixelTop = fullArea.top;
+        float pixelBottom = fullArea.bottom;
+        int minutesSelected = minutesBottom - minutesTop;
 
         Canvas sCanvas = selection.getCanvas();
         sCanvas.drawRoundRect(
                 new RectF(
                         boundaries.left,
-                        selectionTop,
+                        pixelTop,
                         boundaries.right,
-                        selectionBottom),
+                        pixelBottom),
                 10f,
                 10f,
                 editMode ? pSelectionBoundaryEdit : pSelectionBoundary);
@@ -210,9 +219,9 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
         sCanvas.drawRoundRect(
                 new RectF(
                         boundaries.left + strokeWidth,
-                        selectionTop + strokeWidth,
+                        pixelTop + strokeWidth,
                         boundaries.right - strokeWidth,
-                        selectionBottom - strokeWidth),
+                        pixelBottom - strokeWidth),
                 10f,
                 10f,
                 pSelection);
@@ -221,16 +230,18 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
 //        sCanvas.drawRect(bottomKnobBoundary, pSelectionBoundary);
 //        sCanvas.drawRect(middleArea, pSelectionBoundary);
 
-        sCanvas.drawBitmap(upArrow, xMiddlePoint - upArrow.getWidth() / 2, selectionTop - upArrow.getHeight(), pSelKnob);
-        sCanvas.drawBitmap(downArrow, xMiddlePoint - downArrow.getWidth() / 2, selectionBottom, pSelKnob);
+        if(editMode) {
+            sCanvas.drawBitmap(upArrow, xMiddlePoint - upArrow.getWidth() / 2, pixelTop - upArrow.getHeight(), pSelKnob);
+            sCanvas.drawBitmap(downArrow, xMiddlePoint - downArrow.getWidth() / 2, pixelBottom, pSelKnob);
+        }
 
         sCanvas.drawText(
                 new StringBuilder()
                         .append(toString())
                         .append(" (")
-                        .append((int)Math.floor(minutesSelected / 60f))
+                        .append(minutesSelected / 60)
                         .append("h ")
-                        .append((int)Math.floor(minutesSelected % 60f))
+                        .append(minutesSelected % 60)
                         .append("m)").toString(),
                 middleArea.centerX(),
                 middleArea.centerY() + bounds.height() / 2,
@@ -244,9 +255,7 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
             return HitTestResult.TOP_KNOB;
         if (bottomKnobBoundary.contains(mX, mY))
             return HitTestResult.BOTTOM_KNOB;
-       /* if (middleArea.contains(mX, mY))
-            return HitTestResult.MIDDLE_DRAG;*/
-        if (fullArea.contains(mX, mY))
+        if (middleArea.contains(mX, mY))
             return HitTestResult.JUST_IN;
         return HitTestResult.NOWHERE;
     }
@@ -257,8 +266,8 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
 
     VisualTimeSpan join(VisualTimeSpan joining) {
         VisualTimeSpan span =  VisualTimeSpan.newInstance(parent);
-        span.selectionTop = Math.min(selectionTop, joining.selectionTop);
-        span.selectionBottom = Math.max(selectionBottom, joining.selectionBottom);
+        span.minutesTop = Math.min(minutesTop, joining.minutesTop);
+        span.minutesBottom = Math.max(minutesBottom, joining.minutesBottom);
         return span;
     }
 
@@ -291,21 +300,17 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
 
     @Override
     public String toString() {
-        int hT = (int)Math.floor(minutesTop / 60f);
-        int hB = (int)Math.floor(minutesBottom / 60f);
-        int mT = (int)Math.floor(minutesTop % 60f);
-        int mB = (int)Math.floor(minutesBottom % 60f);
+        int hT = minutesTop / 60;
+        int hB = minutesBottom / 60;
+        int mT = minutesTop % 60;
+        int mB = minutesBottom % 60;
         StringBuilder builder = new StringBuilder();
         builder.append(hT < 10 ? "0" : "").append(hT).append(":").append(mT < 10 ? "0" : "").append(mT).append(" - ");
         builder.append(hB < 10 ? "0" : "").append(hB).append(":").append(mB < 10 ? "0" : "").append(mB);
         return builder.toString();
     }
 
-    String getRawRange() {
-        return String.format("%d-%d", (int)minutesTop, (int)minutesBottom);
-    }
-
     static enum HitTestResult {
-        TOP_KNOB, BOTTOM_KNOB, MIDDLE_DRAG, JUST_IN, NOWHERE
+        TOP_KNOB, BOTTOM_KNOB, JUST_IN, NOWHERE
     }
 }

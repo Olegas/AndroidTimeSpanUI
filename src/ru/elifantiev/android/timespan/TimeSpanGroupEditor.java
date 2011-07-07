@@ -53,7 +53,7 @@ public class TimeSpanGroupEditor extends View implements
     private VisualTimeSpan activeSpan = null;
     private VisualTimeSpan.HitTestResult activeSpanMode = VisualTimeSpan.HitTestResult.NOWHERE;
     private VisualDaysSelector daysSelector;
-    private float dragStart = 0f;
+    private int dragStart = 0;
     DrawParameters drawParameters;
 
 
@@ -98,27 +98,20 @@ public class TimeSpanGroupEditor extends View implements
     }
 
     private void changeViewport(float viewportDelta) {
-        int desiredValue = Math.round(viewportTop + viewportDelta);
-        if (desiredValue < 0)
-            desiredValue = 0;
-        else if (desiredValue > 1440 - hoursOnScreen * 60)
-            desiredValue = 1440 - hoursOnScreen * 60;
+        int desiredValue = Math.max(0, Math.min(Math.round(viewportTop + viewportDelta), 1440 - hoursOnScreen * 60));
         if (viewportTop != desiredValue) {
-            int d = viewportTop - desiredValue;
+            desiredValue = (desiredValue / 5 + (desiredValue % 5 > 3 ? 1 : 0)) * 5;
             viewportTop = desiredValue;
             scale.reset();
             drawScale();
             for (VisualTimeSpan span : displayedSpans)
-                span.setBounds(span.getUpperBound() + d, span.getLowerBound() + d);
+                span.invalidate();
             invalidate();
         }
     }
 
     private void setScale(int newScale) {
-        if(newScale < 6)
-            newScale = 6;
-        if(newScale > 24)
-            newScale = 24;
+        newScale = Math.max(6, Math.min(newScale, 24));
         if(hoursOnScreen != newScale) {
             hoursOnScreen = newScale;
 
@@ -128,6 +121,8 @@ public class TimeSpanGroupEditor extends View implements
             } else {
                 scale.reset();
                 drawScale();
+                for (VisualTimeSpan span : displayedSpans)
+                    span.invalidate();
                 invalidate();
             }
         }
@@ -213,7 +208,7 @@ public class TimeSpanGroupEditor extends View implements
                 activeSpanMode = hitTest;
                 activeSpan = span;
                 if (hitTest == VisualTimeSpan.HitTestResult.JUST_IN)
-                    dragStart = motionEvent.getY();
+                    dragStart = (int)pixelPointToMinutes(screenToControl(motionEvent.getY()));
                 break;
             }
         }
@@ -241,39 +236,37 @@ public class TimeSpanGroupEditor extends View implements
             changeViewport(pixelAmountToMinutes(dY));
             return true;
         }
-        float selectionTop = activeSpan.getUpperBound(), selectionBottom = activeSpan.getLowerBound();
-        float val = alignValue(finish.getY());
+        int selectionTop = activeSpan.getUpperBound(), selectionBottom = activeSpan.getLowerBound();
+        int finishY = (int)pixelPointToMinutes(screenToControl(finish.getY()));
         boolean alter = false;
         if (activeSpanMode == VisualTimeSpan.HitTestResult.TOP_KNOB) {
-            val = checkUpperBound(val);
-            if (alter = (boundaries.top <= val && val <= selectionBottom))
-                selectionTop = val;
+            finishY = checkUpperBound(finishY);
+            if (alter = (0 <= finishY && finishY <= selectionBottom))
+                selectionTop = finishY;
         } else if (activeSpanMode == VisualTimeSpan.HitTestResult.BOTTOM_KNOB) {
-            val = checkLowerBound(val);
-            if ((alter = (selectionTop <= val && val <= boundaries.bottom)))
-                selectionBottom = val;
+            finishY = checkLowerBound(finishY);
+            if ((alter = (selectionTop <= finishY && finishY <= 1440)))
+                selectionBottom = finishY;
         } else if (activeSpanMode == VisualTimeSpan.HitTestResult.JUST_IN) {
-            float delta = val - dragStart;
-            if (boundaries.top < activeSpan.getUpperBound() + delta &&
-                    activeSpan.getLowerBound() + delta < boundaries.bottom) {
+            float delta = finishY - dragStart;
+            if (0 < activeSpan.getUpperBound() + delta &&
+                    activeSpan.getLowerBound() + delta < 1440) {
                 selectionTop += delta;
                 selectionBottom += delta;
-            } else if (boundaries.top > selectionTop + delta) {
-                selectionBottom -= selectionTop - boundaries.top;
-                selectionTop = boundaries.top;
-            } else if (selectionBottom + delta > boundaries.bottom) {
-                selectionTop += boundaries.bottom - selectionBottom;
-                selectionBottom = boundaries.bottom;
+            } else if (0 > selectionTop + delta) {
+                selectionBottom -= selectionTop;
+                selectionTop = 0;
+            } else if (selectionBottom + delta > 1440) {
+                selectionTop += 1440 - selectionBottom;
+                selectionBottom = 1440;
             }
-            dragStart = val;
+            dragStart = finishY;
             alter = true;
         }
 
 
         if (alter) {
-            displayedSpans.remove(activeSpan);
             activeSpan.setBounds(selectionTop, selectionBottom);
-            displayedSpans.add(activeSpan);
             invalidate();
         }
 
@@ -292,12 +285,12 @@ public class TimeSpanGroupEditor extends View implements
         return false;
     }
 
-    private float checkUpperBound(float toPoint) {
-        return Math.max(boundaries.top, toPoint);
+    private int checkUpperBound(int toPoint) {
+        return Math.max(0, toPoint);
     }
 
-    private float checkLowerBound(float toPoint) {
-        return Math.min(boundaries.bottom, toPoint);
+    private int checkLowerBound(int toPoint) {
+        return Math.min(1449, toPoint);
     }
 
     private float alignValue(float value) {
