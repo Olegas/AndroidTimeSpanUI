@@ -17,10 +17,7 @@
 package ru.elifantiev.android.timespan;
 
 import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.RectF;
+import android.graphics.*;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.*;
@@ -35,20 +32,27 @@ public class TimeSpanGroupEditor extends View implements
         GestureDetector.OnGestureListener,
         GestureDetector.OnDoubleTapListener {
 
-    private int viewportTop = 8 * 60 + 45;
+    private static final int atTop = 0;
+    private static final int atBottom = 1;
+
+
+    private int viewportTop = 0;
     private int hoursOnScreen = 12;
-    private float scaleFactor = 0.5f;
+    private float scaleFactor = 24f / (float)hoursOnScreen;
     private GestureDetector gestureDetector;
     private ScaleGestureDetector scaleGestureDetector;
-    private Paint pOuter, pLine;
+    private Paint pOuter, pLine, pLabelText;
 
     private TreeSet<VisualTimeSpan> displayedSpans = new TreeSet<VisualTimeSpan>();
-
     private RectF boundaries;
+    private final Rect charBounds = new Rect();
 
-    private String[] labels = new String[24];
+    private Set<String> labelsAtTop = new TreeSet<String>();
+    private Set<String> labelsAtBottom = new TreeSet<String>();
 
+    private final String[] labels = new String[24];
     private final DrawLayer scale = new DrawLayer();
+
     private boolean isMeasured = false;
     private VisualTimeSpan activeSpan = null;
     private VisualTimeSpan.HitTestResult activeSpanMode = VisualTimeSpan.HitTestResult.NOWHERE;
@@ -91,6 +95,14 @@ public class TimeSpanGroupEditor extends View implements
         pLine.setAntiAlias(true);
         pLine.setStyle(Paint.Style.FILL_AND_STROKE);
 
+        pLabelText = new Paint(pLine);
+        pLabelText.setTextAlign(Paint.Align.RIGHT);
+        pLabelText.setColor(Color.WHITE);
+        pLabelText.setTextSize(13 * drawParameters.density);
+
+        pLabelText.getTextBounds("0", 0, 1, charBounds);
+        charBounds.bottom += drawParameters.SCALE_LABEL_TOP_PADDING / 2;
+
         for (int i = 0; i < 24; i++)
             labels[i] = String.format("%02d:00", i);
 
@@ -102,12 +114,37 @@ public class TimeSpanGroupEditor extends View implements
         if (viewportTop != desiredValue) {
             desiredValue = (desiredValue / 5 + (desiredValue % 5 > 3 ? 1 : 0)) * 5;
             viewportTop = desiredValue;
+            recalcOutLabels();
             scale.reset();
             drawScale();
-            for (VisualTimeSpan span : displayedSpans)
-                span.invalidate();
             invalidate();
         }
+    }
+
+    private void recalcOutLabels() {
+        for (VisualTimeSpan span : displayedSpans) {
+            String sSpan = span.toString();
+            if(!isSpanVisible(span)) {
+                if(span.getLowerBound() < viewportTop)
+                    labelsAtTop.add(sSpan);
+                else if(span.getLowerBound() > viewportTop + hoursOnScreen * 60)
+                    labelsAtBottom.add(sSpan);
+            }
+            else {
+                labelsAtTop.remove(sSpan);
+                labelsAtBottom.remove(sSpan);
+            }
+            span.invalidate();
+        }
+    }
+
+    private boolean isSpanVisible(VisualTimeSpan span) {
+        int viewportEnd = viewportTop + hoursOnScreen * 60;
+        int lowerBound = span.getLowerBound();
+        int upperBound = span.getUpperBound();
+        return
+                (viewportTop < upperBound && upperBound < viewportEnd) ||
+                (viewportTop < lowerBound && lowerBound < viewportEnd);
     }
 
     private void setScale(int newScale) {
@@ -119,6 +156,7 @@ public class TimeSpanGroupEditor extends View implements
             if(d < 0) {
                 changeViewport(d * 60);
             } else {
+                recalcOutLabels();
                 scale.reset();
                 drawScale();
                 for (VisualTimeSpan span : displayedSpans)
@@ -154,13 +192,16 @@ public class TimeSpanGroupEditor extends View implements
                 h - getPaddingBottom() - drawParameters.TB_PAD);
 
         scale.onSizeChange(w, h);
-        drawScale();
+
 
         if (displayedSpans.size() == 0)
             appendSpan(VisualTimeSpan.newInstance(this));
 
         for (VisualTimeSpan span : displayedSpans)
             span.onSizeChanged(w, h, boundaries);
+
+        recalcOutLabels();
+        drawScale();
 
         daysSelector.onSizeChanged(w, h, new RectF(
                 w - getPaddingRight() - SIDE_PAD - drawParameters.DAY_SELECTOR_AREA_WIDTH,
@@ -185,17 +226,38 @@ public class TimeSpanGroupEditor extends View implements
         canvas.drawRect(boundaries, pOuter);
 
         int extraMin = (60 - (viewportTop % 60)) % 60;
-        float offsetTop = minuteToPixelPoint(viewportTop + extraMin);
+        float offsetTop = boundaries.top + minuteToPixelPoint(viewportTop + extraMin);
+        float heightHours = boundaries.height() / hoursOnScreen;
+        int firstLabelIndex = viewportTop / 60 + (extraMin > 0 ? 1 : 0);
 
         for (int i = 0; i < hoursOnScreen; i++) {
-            float offsetY = boundaries.top + offsetTop + boundaries.height() * i / hoursOnScreen;
+            float offsetY = offsetTop +  heightHours * i;
             canvas.drawLine(boundaries.left, offsetY, boundaries.right, offsetY, pLine);
-            Log.d("SCALE", String.format("%d %d %d %d", viewportTop, viewportTop / 60, extraMin, hoursOnScreen));
             canvas.drawText(
-                    labels[viewportTop / 60 + (extraMin > 0 ? 1 : 0) + i],
+                    labels[firstLabelIndex + i],
                     boundaries.left + 10,
                     offsetY + drawParameters.SCALE_LABEL_TOP_PADDING,
                     pLine);
+        }
+
+        int i = 0;
+        for(String label : labelsAtTop) {
+            canvas.drawText(label,
+                    boundaries.right - drawParameters.SCALE_LABEL_TOP_PADDING,
+                    boundaries.top + drawParameters.SCALE_LABEL_TOP_PADDING + i * charBounds.height(),
+                    pLabelText);
+            i++;
+        }
+
+        i = 0;
+        int colSize = labelsAtBottom.size() - 1;
+        for(String label : labelsAtBottom) {
+            canvas.drawText(
+                    label,
+                    boundaries.right - drawParameters.SCALE_LABEL_TOP_PADDING,
+                    boundaries.bottom - drawParameters.SCALE_LABEL_TOP_PADDING - (colSize - i) * charBounds.height(),
+                    pLabelText);
+            i++;
         }
     }
 

@@ -19,7 +19,6 @@ package ru.elifantiev.android.timespan;
 
 import android.R;
 import android.graphics.*;
-import android.util.Log;
 import android.view.MotionEvent;
 
 import static ru.elifantiev.android.timespan.DrawParameters.KNOB_TOUCH_AREA;
@@ -135,9 +134,9 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
         return minutesBottom;
     }
 
-    void moveBy(int minutes) {
-        minutesTop += minutes;
-        minutesBottom += minutes;
+    void setBounds(int upper, int lower) {
+        minutesTop = upper;
+        minutesBottom = lower;
         if(minutesTop < 0)
             minutesTop = 0;
         if(minutesBottom > 1440)
@@ -145,16 +144,9 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
         invalidate();
     }
 
-    void setBounds(int upper, int lower) {
-        minutesTop = upper;
-        minutesBottom = lower;
-        invalidate();
-    }
-
     void invalidate() {
         recalcBoundaries();
         drawSelection();
-        Log.d("VTS redraw", String.format("%d:%d", minutesTop, minutesBottom));
     }
 
     void release() {

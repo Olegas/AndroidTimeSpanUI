@@ -18,21 +18,17 @@ package ru.elifantiev.android.timespan;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 
 class DrawLayer {
     private Bitmap bitmap;
 
     DrawLayer() {
-
     }
 
     public void reset() {
         if(bitmap != null) {
-            int w = bitmap.getWidth();
-            int h = bitmap.getHeight();
-            Bitmap.Config cfg = bitmap.getConfig();
-            bitmap.recycle();
-            bitmap = Bitmap.createBitmap(w, h, cfg);
+            bitmap.eraseColor(Color.TRANSPARENT);
         }
     }
 
