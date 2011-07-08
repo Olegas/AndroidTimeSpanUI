@@ -154,8 +154,6 @@ public class TimeSpanGroupEditor extends View implements
                 recalcOutLabels(true);
                 scale.reset();
                 drawScale();
-                for (VisualTimeSpan span : displayedSpans)
-                    span.invalidate();
                 invalidate();
             }
         }
