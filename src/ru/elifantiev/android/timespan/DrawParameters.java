@@ -22,11 +22,11 @@ import android.view.WindowManager;
 
 final class DrawParameters {
     final static int SIDE_PAD = 7;
-    final float TB_PAD;
+    final int TB_PAD;
     final static int KNOB_TOUCH_AREA = 25;
     final static int MIDDLE_AREA_PAD = 15;
-    final float DAY_SELECTOR_AREA_WIDTH;
-    final float SCALE_LABEL_TOP_PADDING;
+    final int DAY_SELECTOR_AREA_WIDTH;
+    final int SCALE_LABEL_TOP_PADDING;
     final float density;
 
     DrawParameters(Context context) {
@@ -36,8 +36,8 @@ final class DrawParameters {
 
         density = metrics.density;
 
-        TB_PAD = 20 * density;
-        DAY_SELECTOR_AREA_WIDTH = 60 * density;
-        SCALE_LABEL_TOP_PADDING = 14 * density;
+        TB_PAD = (int)(20 * density);
+        DAY_SELECTOR_AREA_WIDTH = (int)(60 * density);
+        SCALE_LABEL_TOP_PADDING = (int)(14 * density);
     }
 }

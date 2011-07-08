@@ -32,19 +32,15 @@ public class TimeSpanGroupEditor extends View implements
         GestureDetector.OnGestureListener,
         GestureDetector.OnDoubleTapListener {
 
-    private static final int atTop = 0;
-    private static final int atBottom = 1;
-
-
     private int viewportTop = 0;
     private int hoursOnScreen = 12;
-    private float scaleFactor = 24f / (float)hoursOnScreen;
+    private float scaleFactor = (float)hoursOnScreen / 24f;
     private GestureDetector gestureDetector;
     private ScaleGestureDetector scaleGestureDetector;
     private Paint pOuter, pLine, pLabelText;
 
     private TreeSet<VisualTimeSpan> displayedSpans = new TreeSet<VisualTimeSpan>();
-    private RectF boundaries;
+    private Rect boundaries;
     private final Rect charBounds = new Rect();
 
     private Set<String> labelsAtTop = new TreeSet<String>();
@@ -114,14 +110,16 @@ public class TimeSpanGroupEditor extends View implements
         if (viewportTop != desiredValue) {
             desiredValue = (desiredValue / 5 + (desiredValue % 5 > 3 ? 1 : 0)) * 5;
             viewportTop = desiredValue;
-            recalcOutLabels();
+            recalcOutLabels(true);
             scale.reset();
             drawScale();
             invalidate();
         }
     }
 
-    private void recalcOutLabels() {
+    private void recalcOutLabels(boolean doInvalidate) {
+        labelsAtTop.clear();
+        labelsAtBottom.clear();
         for (VisualTimeSpan span : displayedSpans) {
             String sSpan = span.toString();
             if(!isSpanVisible(span)) {
@@ -130,11 +128,8 @@ public class TimeSpanGroupEditor extends View implements
                 else if(span.getLowerBound() > viewportTop + hoursOnScreen * 60)
                     labelsAtBottom.add(sSpan);
             }
-            else {
-                labelsAtTop.remove(sSpan);
-                labelsAtBottom.remove(sSpan);
-            }
-            span.invalidate();
+            if(doInvalidate)
+                span.invalidate();
         }
     }
 
@@ -156,7 +151,7 @@ public class TimeSpanGroupEditor extends View implements
             if(d < 0) {
                 changeViewport(d * 60);
             } else {
-                recalcOutLabels();
+                recalcOutLabels(true);
                 scale.reset();
                 drawScale();
                 for (VisualTimeSpan span : displayedSpans)
@@ -174,8 +169,10 @@ public class TimeSpanGroupEditor extends View implements
             return true;
         else {
             if (activeSpan != null && event.getAction() == MotionEvent.ACTION_UP) {
-                if (checkOverlap())
+                if (checkOverlap()) {
+                    recalcOutLabels(false);
                     invalidate();
+                }
                 return true;
             } else
                 return super.onTouchEvent(event);
@@ -185,7 +182,7 @@ public class TimeSpanGroupEditor extends View implements
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         isMeasured = true;
-        boundaries = new RectF(
+        boundaries = new Rect(
                 getPaddingLeft() + SIDE_PAD,
                 getPaddingTop() + drawParameters.TB_PAD,
                 w - getPaddingRight() - SIDE_PAD * 2 - drawParameters.DAY_SELECTOR_AREA_WIDTH,
@@ -200,7 +197,7 @@ public class TimeSpanGroupEditor extends View implements
         for (VisualTimeSpan span : displayedSpans)
             span.onSizeChanged(w, h, boundaries);
 
-        recalcOutLabels();
+        recalcOutLabels(false);
         drawScale();
 
         daysSelector.onSizeChanged(w, h, new RectF(
@@ -276,7 +273,7 @@ public class TimeSpanGroupEditor extends View implements
         }
         return
                 activeSpan != null ||
-                        boundaries.contains(motionEvent.getX(), motionEvent.getY()) ||
+                        boundaries.contains((int)motionEvent.getX(), (int)motionEvent.getY()) ||
                         daysSelector.hitTest(motionEvent) >= 0;
     }
 
@@ -397,26 +394,24 @@ public class TimeSpanGroupEditor extends View implements
             newOne.onSizeChanged(getMeasuredWidth(), getMeasuredHeight(), boundaries);
     }
 
-    public void clear() {
-        Set<VisualTimeSpan> copy = new TreeSet<VisualTimeSpan>(displayedSpans);
-        for (VisualTimeSpan span : copy)
-            removeSpan(span);
-    }
-
     private void removeSpan(VisualTimeSpan span) {
-        if (displayedSpans.contains(span)) {
-            span.release();
-            displayedSpans.remove(span);
-        }
+        span.release();
+        displayedSpans.remove(span);
     }
 
     public void setValue(TimeSpanGroup group) {
-        clear();
+        if(group == null)
+            throw new IllegalArgumentException("Null group specified");
+
+        for(VisualTimeSpan span : displayedSpans)
+            span.release();
+        displayedSpans.clear();
         daysSelector.setSelectedDays(group.getDayMask());
         for (TimeSpan span : group.getCollection()) {
             appendSpan(VisualTimeSpan.fromSpan(this, span));
         }
-
+        recalcOutLabels(false);
+        invalidate();
     }
 
     public TimeSpanGroup getValue() {
@@ -440,7 +435,7 @@ public class TimeSpanGroupEditor extends View implements
         Set<VisualTimeSpan> copySet = new TreeSet<VisualTimeSpan>(displayedSpans);
         for (VisualTimeSpan span : copySet) {
             if (current != null) {
-                if (current.getArea().intersect(span.getArea())) {
+                if (current.intersects(span)) {
                     alter = true;
                     removeSpan(current);
                     removeSpan(span);
@@ -459,11 +454,12 @@ public class TimeSpanGroupEditor extends View implements
     }
 
     public boolean onDoubleTap(MotionEvent motionEvent) {
-        if (boundaries.contains(motionEvent.getX(), motionEvent.getY())) {
+        if (boundaries.contains((int)motionEvent.getX(), (int)motionEvent.getY())) {
             for (VisualTimeSpan span : displayedSpans) {
                 if (span.hitTest(motionEvent) == VisualTimeSpan.HitTestResult.JUST_IN) {
                     if (displayedSpans.size() > 1 && span.isEditMode()) {
                         displayedSpans.remove(span);
+                        recalcOutLabels(false);
                         invalidate();
                     }
                     return true;
@@ -486,9 +482,9 @@ public class TimeSpanGroupEditor extends View implements
     private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
         @Override
         public boolean onScale(ScaleGestureDetector detector) {
+
             scaleFactor *= 1/detector.getScaleFactor();
 
-            // Don't let the object get too small or too large.
             scaleFactor = Math.max(0.25f, Math.min(scaleFactor, 1.0f));
 
             setScale((int) (24 * scaleFactor));

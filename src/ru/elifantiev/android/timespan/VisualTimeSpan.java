@@ -26,7 +26,8 @@ import static ru.elifantiev.android.timespan.DrawParameters.MIDDLE_AREA_PAD;
 
 class VisualTimeSpan implements Comparable<VisualTimeSpan> {
 
-    private final DrawLayer selection = new DrawLayer();
+    private final DrawLayer fullCanvas = new DrawLayer();
+    private final DrawLayer scaleArea = new DrawLayer();
     private final static Paint pSelectionBoundary = initBoundaryPaint(false);
     private final static Paint pSelectionBoundaryEdit = initBoundaryPaint(true);
     private final static Paint pSelection = initInnerPaint();
@@ -39,8 +40,10 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
     private float xMiddlePoint;
     private boolean editMode = false;
     private RectF topKnobBoundary, bottomKnobBoundary, middleArea, fullArea;
-    private RectF boundaries;
+    private Rect boundaries;
     private Rect bounds = new Rect();
+
+    private float pixelTop, pixelBottom;
 
     int minutesTop = 0, minutesBottom = 1440;
 
@@ -150,58 +153,60 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
     }
 
     void release() {
-        selection.release();
+        fullCanvas.release();
+        scaleArea.release();
     }
 
-    void onSizeChanged(int totalW, int totalH, RectF boundaries) {
+    void onSizeChanged(int totalW, int totalH, Rect boundaries) {
         this.boundaries = boundaries;
 
         xMiddlePoint = boundaries.width() / 2;
 
-        selection.onSizeChange(totalW, totalH);
+        fullCanvas.onSizeChange(totalW, totalH);
+        scaleArea.onSizeChange(boundaries.width(), boundaries.height());
         recalcBoundaries();
         drawSelection();
     }
 
     void onDraw(Canvas canvas) {
-        selection.drawOn(canvas, 0, 0);
+        if(editMode)
+            fullCanvas.drawOn(canvas, 0, 0);
+        scaleArea.drawOn(canvas, boundaries.left, boundaries.top);
     }
 
     private void recalcBoundaries() {
 
-        float pixelTop = parent.controlToScreen(parent.minuteToPixelPoint(minutesTop));
-        float pixelBottom = parent.controlToScreen(parent.minuteToPixelPoint(minutesBottom));
+        pixelTop = parent.minuteToPixelPoint(minutesTop);
+        pixelBottom = parent.minuteToPixelPoint(minutesBottom);
+
         topKnobBoundary = new RectF(
                 xMiddlePoint - KNOB_TOUCH_AREA,
-                pixelTop - KNOB_TOUCH_AREA,
+                parent.controlToScreen(pixelTop) - KNOB_TOUCH_AREA,
                 xMiddlePoint + KNOB_TOUCH_AREA,
-                pixelTop + KNOB_TOUCH_AREA);
+                parent.controlToScreen(pixelTop) + KNOB_TOUCH_AREA);
 
         bottomKnobBoundary = new RectF(
                 xMiddlePoint - KNOB_TOUCH_AREA,
-                pixelBottom - KNOB_TOUCH_AREA,
+                parent.controlToScreen(pixelBottom) - KNOB_TOUCH_AREA,
                 xMiddlePoint + KNOB_TOUCH_AREA,
-                pixelBottom + KNOB_TOUCH_AREA);
+                parent.controlToScreen(pixelBottom) + KNOB_TOUCH_AREA);
 
-        middleArea = new RectF(boundaries.left + MIDDLE_AREA_PAD, Math.max(boundaries.top, pixelTop) + MIDDLE_AREA_PAD,
-                boundaries.right - MIDDLE_AREA_PAD, Math.min(boundaries.bottom, pixelBottom) - MIDDLE_AREA_PAD);
-
-        fullArea = new RectF(boundaries.left, pixelTop, boundaries.right, pixelBottom);
+        middleArea = new RectF(boundaries.left + MIDDLE_AREA_PAD, Math.max(0, pixelTop) + MIDDLE_AREA_PAD,
+                boundaries.right - MIDDLE_AREA_PAD, Math.min(boundaries.height(), pixelBottom) - MIDDLE_AREA_PAD);
     }
 
     private void drawSelection() {
-        selection.reset();
+        fullCanvas.reset();
+        scaleArea.reset();
 
-        float pixelTop = fullArea.top;
-        float pixelBottom = fullArea.bottom;
         int minutesSelected = minutesBottom - minutesTop;
 
-        Canvas sCanvas = selection.getCanvas();
+        Canvas sCanvas = scaleArea.getCanvas();
         sCanvas.drawRoundRect(
                 new RectF(
-                        boundaries.left,
+                        0,
                         pixelTop,
-                        boundaries.right,
+                        boundaries.width(),
                         pixelBottom),
                 10f,
                 10f,
@@ -210,21 +215,18 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
 
         sCanvas.drawRoundRect(
                 new RectF(
-                        boundaries.left + strokeWidth,
+                        0 + strokeWidth,
                         pixelTop + strokeWidth,
-                        boundaries.right - strokeWidth,
+                        boundaries.width() - strokeWidth,
                         pixelBottom - strokeWidth),
                 10f,
                 10f,
                 pSelection);
 
-//        sCanvas.drawRect(topKnobBoundary, pSelectionBoundary);
-//        sCanvas.drawRect(bottomKnobBoundary, pSelectionBoundary);
-//        sCanvas.drawRect(middleArea, pSelectionBoundary);
-
         if(editMode) {
-            sCanvas.drawBitmap(upArrow, xMiddlePoint - upArrow.getWidth() / 2, pixelTop - upArrow.getHeight(), pSelKnob);
-            sCanvas.drawBitmap(downArrow, xMiddlePoint - downArrow.getWidth() / 2, pixelBottom, pSelKnob);
+            Canvas fCanvas = fullCanvas.getCanvas();
+            fCanvas.drawBitmap(upArrow, xMiddlePoint - upArrow.getWidth() / 2, parent.controlToScreen(pixelTop) - upArrow.getHeight(), pSelKnob);
+            fCanvas.drawBitmap(downArrow, xMiddlePoint - downArrow.getWidth() / 2, parent.controlToScreen(pixelBottom), pSelKnob);
         }
 
         sCanvas.drawText(
@@ -252,8 +254,11 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
         return HitTestResult.NOWHERE;
     }
 
-    RectF getArea() {
-        return fullArea;
+    boolean intersects(VisualTimeSpan other) {
+        return (minutesTop < other.minutesTop && other.minutesTop < minutesBottom) ||
+               (minutesTop < other.minutesBottom && other.minutesBottom < minutesBottom) ||
+               (other.minutesTop < minutesTop && minutesTop < other.minutesBottom) ||
+               (other.minutesTop < minutesBottom && minutesBottom < other.minutesBottom);
     }
 
     VisualTimeSpan join(VisualTimeSpan joining) {
@@ -263,11 +268,11 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
         return span;
     }
 
-    public int compareTo(VisualTimeSpan visualTimeSpan) {
-        int top = Float.compare(minutesTop, visualTimeSpan.minutesTop);
+    public int compareTo(VisualTimeSpan other) {
+        int top = minutesTop - other.minutesTop;
         if (top != 0)
             return top;
-        return Float.compare(minutesBottom, visualTimeSpan.minutesBottom);
+        return minutesBottom - other.minutesBottom;
     }
 
     @Override
@@ -278,15 +283,15 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
         VisualTimeSpan that = (VisualTimeSpan) o;
 
         return
-                Float.compare(that.minutesBottom, minutesBottom) == 0 &&
-                Float.compare(that.minutesTop, minutesTop) == 0;
+                that.minutesBottom == minutesBottom &&
+                that.minutesTop == minutesTop;
 
     }
 
     @Override
     public int hashCode() {
-        int result = 17 + (minutesTop != +0.0f ? Float.floatToIntBits(minutesTop) : 0);
-        result = 31 * result + (minutesBottom != +0.0f ? Float.floatToIntBits(minutesBottom) : 0);
+        int result = minutesTop;
+        result = 31 * result + minutesBottom;
         return result;
     }
 
