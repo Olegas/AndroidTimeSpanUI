@@ -75,7 +75,9 @@ public class TimeSpanGroupEditor extends View implements
     private void init() {
         gestureDetector = new GestureDetector(getContext(), this);
         gestureDetector.setOnDoubleTapListener(this);
-        scaleGestureDetector = new ScaleGestureDetector(getContext(), new ScaleListener());
+
+        if(getContext().getResources().getBoolean(R.bool.hasScaleGestureDetector))
+            scaleGestureDetector = new ScaleGestureDetector(getContext(), new ScaleListener());
 
         drawParameters = new DrawParameters(getContext());
 
@@ -138,8 +140,10 @@ public class TimeSpanGroupEditor extends View implements
         int lowerBound = span.getLowerBound();
         int upperBound = span.getUpperBound();
         return
-                (viewportTop < upperBound && upperBound < viewportEnd) ||
-                (viewportTop < lowerBound && lowerBound < viewportEnd);
+                (viewportTop <= upperBound && upperBound <= viewportEnd) ||
+                (viewportTop <= lowerBound && lowerBound <= viewportEnd) ||
+                (upperBound <= viewportTop && viewportTop <= lowerBound) ||
+                (upperBound <= viewportEnd && viewportEnd <= lowerBound);
     }
 
     private void setScale(int newScale) {
@@ -161,7 +165,8 @@ public class TimeSpanGroupEditor extends View implements
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        scaleGestureDetector.onTouchEvent(event);
+        if(scaleGestureDetector != null)
+            scaleGestureDetector.onTouchEvent(event);
 
         if (gestureDetector.onTouchEvent(event))
             return true;
@@ -347,7 +352,7 @@ public class TimeSpanGroupEditor extends View implements
     }
 
     private int checkLowerBound(int toPoint) {
-        return Math.min(1449, toPoint);
+        return Math.min(1440, toPoint);
     }
 
     private float alignValue(float value) {
@@ -489,4 +494,6 @@ public class TimeSpanGroupEditor extends View implements
             return true;
         }
     }
+
+
 }
