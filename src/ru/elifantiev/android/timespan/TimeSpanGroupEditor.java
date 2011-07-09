@@ -20,7 +20,13 @@ import android.content.Context;
 import android.graphics.*;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.*;
+import android.view.GestureDetector;
+import android.view.HapticFeedbackConstants;
+import android.view.MotionEvent;
+import android.view.View;
+import ru.elifantiev.android.timespan.gestures.ScaleGestureDetectorWrapper;
+import ru.elifantiev.android.timespan.gestures.SimpliestScaleListener;
+import ru.elifantiev.android.timespan.gestures.impl.ScaleDetectorFactory;
 
 import java.util.Set;
 import java.util.TreeSet;
@@ -35,19 +41,19 @@ public class TimeSpanGroupEditor extends View implements
     private int viewportTop = 0;
     private int hoursOnScreen = 12;
     private float scaleFactor = (float)hoursOnScreen / 24f;
-    private GestureDetector gestureDetector;
-    private ScaleGestureDetector scaleGestureDetector;
-    private Paint pOuter, pLine, pLabelText;
 
-    private TreeSet<VisualTimeSpan> displayedSpans = new TreeSet<VisualTimeSpan>();
+    private GestureDetector gestureDetector;
+    private ScaleGestureDetectorWrapper scaleGestureDetector;
+
+    private final DrawLayer scale = new DrawLayer();
+    private Paint pOuter, pLine, pLabelText;
     private Rect boundaries;
     private final Rect charBounds = new Rect();
 
+    private TreeSet<VisualTimeSpan> displayedSpans = new TreeSet<VisualTimeSpan>();
     private Set<String> labelsAtTop = new TreeSet<String>();
     private Set<String> labelsAtBottom = new TreeSet<String>();
-
     private final String[] labels = new String[24];
-    private final DrawLayer scale = new DrawLayer();
 
     private boolean isMeasured = false;
     private VisualTimeSpan activeSpan = null;
@@ -76,8 +82,16 @@ public class TimeSpanGroupEditor extends View implements
         gestureDetector = new GestureDetector(getContext(), this);
         gestureDetector.setOnDoubleTapListener(this);
 
-        if(getContext().getResources().getBoolean(R.bool.hasScaleGestureDetector))
-            scaleGestureDetector = new ScaleGestureDetector(getContext(), new ScaleListener());
+        scaleGestureDetector = ScaleDetectorFactory.newDetector(getContext(), new SimpliestScaleListener() {
+            @Override
+            public void onScale(float sF) {
+                scaleFactor *= 1 / sF;
+
+                scaleFactor = Math.max(0.25f, Math.min(scaleFactor, 1.0f));
+
+                setScale((int) (24 * scaleFactor));
+            }
+        });
 
         drawParameters = new DrawParameters(getContext());
 
@@ -165,21 +179,18 @@ public class TimeSpanGroupEditor extends View implements
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if(scaleGestureDetector != null)
-            scaleGestureDetector.onTouchEvent(event);
-
         if (gestureDetector.onTouchEvent(event))
             return true;
-        else {
-            if (activeSpan != null && event.getAction() == MotionEvent.ACTION_UP) {
-                if (checkOverlap()) {
-                    recalcOutLabels(false);
-                    invalidate();
-                }
-                return true;
-            } else
-                return super.onTouchEvent(event);
-        }
+        if (scaleGestureDetector.onTouchEvent(event))
+            return true;
+        if (activeSpan != null && event.getPointerCount() == 1 && event.getAction() == MotionEvent.ACTION_UP) {
+            if (checkOverlap()) {
+                recalcOutLabels(false);
+                invalidate();
+            }
+            return true;
+        } else
+            return super.onTouchEvent(event);
     }
 
     @Override
@@ -481,19 +492,5 @@ public class TimeSpanGroupEditor extends View implements
     public boolean onDoubleTapEvent(MotionEvent motionEvent) {
         return false;
     }
-
-    private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
-        @Override
-        public boolean onScale(ScaleGestureDetector detector) {
-
-            scaleFactor *= 1/detector.getScaleFactor();
-
-            scaleFactor = Math.max(0.25f, Math.min(scaleFactor, 1.0f));
-
-            setScale((int) (24 * scaleFactor));
-            return true;
-        }
-    }
-
 
 }
