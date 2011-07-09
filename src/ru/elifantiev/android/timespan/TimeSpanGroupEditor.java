@@ -183,7 +183,7 @@ public class TimeSpanGroupEditor extends View implements
             return true;
         if (scaleGestureDetector.onTouchEvent(event))
             return true;
-        if (activeSpan != null && event.getPointerCount() == 1 && event.getAction() == MotionEvent.ACTION_UP) {
+        if (activeSpan != null && event.getAction() == MotionEvent.ACTION_UP) {
             if (checkOverlap()) {
                 recalcOutLabels(false);
                 invalidate();
