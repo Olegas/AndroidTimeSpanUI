@@ -191,7 +191,7 @@ public class TimeSpanGroupEditor extends View implements
                 w - getPaddingRight() - SIDE_PAD * 2 - drawParameters.DAY_SELECTOR_AREA_WIDTH,
                 h - getPaddingBottom() - drawParameters.TB_PAD);
 
-        scale.onSizeChange(w, h);
+        scale.onSizeChange(boundaries.width(), boundaries.height());
 
 
         if (displayedSpans.size() == 0)
@@ -215,7 +215,7 @@ public class TimeSpanGroupEditor extends View implements
 
     @Override
     protected void onDraw(Canvas canvas) {
-        scale.drawOn(canvas, 0, 0);
+        scale.drawOn(canvas, boundaries.left, boundaries.top);
         daysSelector.onDraw(canvas);
         for (VisualTimeSpan span : displayedSpans)
             span.onDraw(canvas);
@@ -223,19 +223,19 @@ public class TimeSpanGroupEditor extends View implements
 
     private void drawScale() {
         Canvas canvas = scale.getCanvas();
-        canvas.drawRect(boundaries, pOuter);
+        canvas.drawRect(0, 0, boundaries.width(), boundaries.height(), pOuter);
 
         int extraMin = (60 - (viewportTop % 60)) % 60;
-        float offsetTop = boundaries.top + minuteToPixelPoint(viewportTop + extraMin);
+        float offsetTop = minuteToPixelPoint(viewportTop + extraMin);
         float heightHours = boundaries.height() / hoursOnScreen;
         int firstLabelIndex = viewportTop / 60 + (extraMin > 0 ? 1 : 0);
 
         for (int i = 0; i < hoursOnScreen; i++) {
             float offsetY = offsetTop +  heightHours * i;
-            canvas.drawLine(boundaries.left, offsetY, boundaries.right, offsetY, pLine);
+            canvas.drawLine(0, offsetY, boundaries.width(), offsetY, pLine);
             canvas.drawText(
                     labels[firstLabelIndex + i],
-                    boundaries.left + 10,
+                    10,
                     offsetY + drawParameters.SCALE_LABEL_TOP_PADDING,
                     pLine);
         }
@@ -243,8 +243,8 @@ public class TimeSpanGroupEditor extends View implements
         int i = 0;
         for(String label : labelsAtTop) {
             canvas.drawText(label,
-                    boundaries.right - drawParameters.SCALE_LABEL_TOP_PADDING,
-                    boundaries.top + drawParameters.SCALE_LABEL_TOP_PADDING + i * charBounds.height(),
+                    boundaries.width() - drawParameters.SCALE_LABEL_TOP_PADDING,
+                    drawParameters.SCALE_LABEL_TOP_PADDING + i * charBounds.height(),
                     pLabelText);
             i++;
         }
@@ -254,8 +254,8 @@ public class TimeSpanGroupEditor extends View implements
         for(String label : labelsAtBottom) {
             canvas.drawText(
                     label,
-                    boundaries.right - drawParameters.SCALE_LABEL_TOP_PADDING,
-                    boundaries.bottom - drawParameters.SCALE_LABEL_TOP_PADDING - (colSize - i) * charBounds.height(),
+                    boundaries.width() - drawParameters.SCALE_LABEL_TOP_PADDING,
+                    boundaries.height() - drawParameters.SCALE_LABEL_TOP_PADDING - (colSize - i) * charBounds.height(),
                     pLabelText);
             i++;
         }
