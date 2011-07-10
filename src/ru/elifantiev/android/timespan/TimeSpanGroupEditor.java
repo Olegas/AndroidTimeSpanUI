@@ -413,8 +413,10 @@ public class TimeSpanGroupEditor extends View implements
     }
 
     private void removeSpan(VisualTimeSpan span) {
-        span.release();
-        displayedSpans.remove(span);
+        if(displayedSpans.contains(span)) {
+            span.release();
+            displayedSpans.remove(span);
+        }
     }
 
     public void setValue(TimeSpanGroup group) {
@@ -446,10 +448,10 @@ public class TimeSpanGroupEditor extends View implements
     }
 
     private boolean checkOverlap() {
-        boolean alter = false;
-        VisualTimeSpan current = null;
         if (displayedSpans.size() < 2)
             return false;
+        boolean alter = false;
+        VisualTimeSpan current = null;
         Set<VisualTimeSpan> copySet = new TreeSet<VisualTimeSpan>(displayedSpans);
         for (VisualTimeSpan span : copySet) {
             if (current != null) {
