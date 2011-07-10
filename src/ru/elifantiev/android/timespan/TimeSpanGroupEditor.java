@@ -149,7 +149,7 @@ public class TimeSpanGroupEditor extends View implements
         }
     }
 
-    private boolean isSpanVisible(VisualTimeSpan span) {
+    boolean isSpanVisible(VisualTimeSpan span) {
         int viewportEnd = viewportTop + hoursOnScreen * 60;
         int lowerBound = span.getLowerBound();
         int upperBound = span.getUpperBound();

@@ -56,7 +56,7 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
     }
 
     private static Paint initInnerPaint() {
-        Paint p  = new Paint();
+        Paint p = new Paint();
         p.setColor(0x550000FF);
         p.setStyle(Paint.Style.FILL);
         return p;
@@ -70,7 +70,7 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
     }
 
     private Paint initTextPaint(float density) {
-        Paint r  = new Paint();
+        Paint r = new Paint();
         r.setStyle(Paint.Style.FILL_AND_STROKE);
         r.setTextSize(20 * density);
         r.setColor(0xFFFFFFFF);
@@ -109,8 +109,8 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
 
     static VisualTimeSpan newInstanceAtValues(TimeSpanGroupEditor parent, float minTop, float minBottom) {
         VisualTimeSpan ret = new VisualTimeSpan(parent);
-        ret.minutesTop = (int)minTop;
-        ret.minutesBottom = (int)minBottom;
+        ret.minutesTop = (int) minTop;
+        ret.minutesBottom = (int) minBottom;
         return ret;
     }
 
@@ -123,7 +123,7 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
     }
 
     void setEditMode(boolean editMode) {
-        if(this.editMode != editMode) {
+        if (this.editMode != editMode) {
             this.editMode = editMode;
             invalidate();
         }
@@ -140,9 +140,9 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
     void setBounds(int upper, int lower) {
         minutesTop = upper;
         minutesBottom = lower;
-        if(minutesTop < 0)
+        if (minutesTop < 0)
             minutesTop = 0;
-        if(minutesBottom > 1440)
+        if (minutesBottom > 1440)
             minutesBottom = 1440;
         invalidate();
     }
@@ -169,9 +169,11 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
     }
 
     void onDraw(Canvas canvas) {
-        if(editMode)
-            fullCanvas.drawOn(canvas, 0, 0);
-        scaleArea.drawOn(canvas, boundaries.left, boundaries.top);
+        if (parent.isSpanVisible(this)) {
+            if (editMode)
+                fullCanvas.drawOn(canvas, 0, 0);
+            scaleArea.drawOn(canvas, boundaries.left, boundaries.top);
+        }
     }
 
     private void recalcBoundaries() {
@@ -223,7 +225,7 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
                 10f,
                 pSelection);
 
-        if(editMode) {
+        if (editMode) {
             Canvas fCanvas = fullCanvas.getCanvas();
             fCanvas.drawBitmap(upArrow, xMiddlePoint - upArrow.getWidth() / 2, parent.controlToScreen(pixelTop) - upArrow.getHeight(), pSelKnob);
             fCanvas.drawBitmap(downArrow, xMiddlePoint - downArrow.getWidth() / 2, parent.controlToScreen(pixelBottom), pSelKnob);
@@ -256,13 +258,13 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
 
     boolean intersects(VisualTimeSpan other) {
         return (minutesTop < other.minutesTop && other.minutesTop < minutesBottom) ||
-               (minutesTop < other.minutesBottom && other.minutesBottom < minutesBottom) ||
-               (other.minutesTop < minutesTop && minutesTop < other.minutesBottom) ||
-               (other.minutesTop < minutesBottom && minutesBottom < other.minutesBottom);
+                (minutesTop < other.minutesBottom && other.minutesBottom < minutesBottom) ||
+                (other.minutesTop < minutesTop && minutesTop < other.minutesBottom) ||
+                (other.minutesTop < minutesBottom && minutesBottom < other.minutesBottom);
     }
 
     VisualTimeSpan join(VisualTimeSpan joining) {
-        VisualTimeSpan span =  VisualTimeSpan.newInstance(parent);
+        VisualTimeSpan span = VisualTimeSpan.newInstance(parent);
         span.minutesTop = Math.min(minutesTop, joining.minutesTop);
         span.minutesBottom = Math.max(minutesBottom, joining.minutesBottom);
         return span;
@@ -284,7 +286,7 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
 
         return
                 that.minutesBottom == minutesBottom &&
-                that.minutesTop == minutesTop;
+                        that.minutesTop == minutesTop;
 
     }
 
