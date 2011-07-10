@@ -17,7 +17,10 @@
 package ru.elifantiev.android.timespan;
 
 import android.content.Context;
-import android.graphics.*;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -181,12 +184,13 @@ public class TimeSpanGroupEditor extends View implements
     public boolean onTouchEvent(MotionEvent event) {
         if (gestureDetector.onTouchEvent(event))
             return true;
-        if (scaleGestureDetector.onTouchEvent(event))
-            return true;
-        if (activeSpan != null && event.getAction() == MotionEvent.ACTION_UP) {
-            if (checkOverlap()) {
-                recalcOutLabels(false);
-                invalidate();
+        scaleGestureDetector.onTouchEvent(event);
+        if (event.getAction() == MotionEvent.ACTION_UP) {
+            if(activeSpan != null) {
+                if (checkOverlap()) {
+                    recalcOutLabels(false);
+                    invalidate();
+                }
             }
             return true;
         } else
@@ -214,11 +218,11 @@ public class TimeSpanGroupEditor extends View implements
         recalcOutLabels(false);
         drawScale();
 
-        daysSelector.onSizeChanged(w, h, new RectF(
-                w - getPaddingRight() - SIDE_PAD - drawParameters.DAY_SELECTOR_AREA_WIDTH,
-                getPaddingTop() + drawParameters.TB_PAD,
-                w - getPaddingRight() - SIDE_PAD,
-                h - getPaddingBottom() - drawParameters.TB_PAD
+        daysSelector.onSizeChanged(new Rect(
+            w - getPaddingRight() - SIDE_PAD - drawParameters.DAY_SELECTOR_AREA_WIDTH,
+            getPaddingTop() + drawParameters.TB_PAD,
+            w - getPaddingRight() - SIDE_PAD,
+            h - getPaddingBottom() - drawParameters.TB_PAD
         ));
 
         super.onSizeChanged(w, h, oldw, oldh);

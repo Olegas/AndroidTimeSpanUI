@@ -19,19 +19,17 @@ package ru.elifantiev.android.timespan;
 
 import android.content.Context;
 import android.graphics.*;
-import android.util.DisplayMetrics;
 import android.view.MotionEvent;
-import android.view.WindowManager;
 
 class VisualDaysSelector {
 
     private final DrawLayer days = new DrawLayer();
     private final Paint pText;
 
-    private final RectF[] dayBoxes = new RectF[7];
-    private final RectF[] checkSizes = new RectF[7];
+    private final Rect[] dayBoxes = new Rect[7];
+    private final Rect[] checkSizes = new Rect[7];
     private int selected = 0;
-    private RectF boundaries;
+    private Rect boundaries;
     private final Bitmap checkOn, checkOff;
     private final String[] labels;
     private final int weekStart;
@@ -67,30 +65,30 @@ class VisualDaysSelector {
     }
 
     public void onDraw(Canvas canvas) {
-        days.drawOn(canvas, 0, 0);
+        days.drawOn(canvas, boundaries.left, boundaries.top);
     }
 
-    void onSizeChanged(int totalW, int totalH, RectF boundaries) {
+    void onSizeChanged(Rect boundaries) {
         this.boundaries = boundaries;
-        pText.setTextSize(Math.min(boundaries.width(), boundaries.height() / 7) / 4);
-        days.onSizeChange(totalW, totalH);
+        //pText.setTextSize(Math.min(boundaries.width(), boundaries.height() / 7) / 4);
+        days.onSizeChange(boundaries.width(), boundaries.height());
         precalcBoxes();
         drawDays();
     }
 
     private void precalcBoxes() {
-        float tH = boundaries.height();
-        float btnW = Math.min(boundaries.width(), tH / 7);
-        float spaceH = (tH - (btnW * 7)) / 6;
+        int tH = boundaries.height();
+        int btnW = Math.min(boundaries.width(), tH / 7);
+        int spaceH = (tH - (btnW * 7)) / 6;
 
         for(int i = 0; i < 7; i++) {
-            float topPt = (btnW + spaceH) * i;
-            dayBoxes[i] = new RectF(boundaries.left, boundaries.top + topPt, boundaries.right, boundaries.top + topPt + btnW);
-            checkSizes[i] = new RectF(
-                                boundaries.left + (boundaries.right - boundaries.left) / 2 - (2 * checkOff.getWidth() / 3),
-                                boundaries.top + topPt,
-                                boundaries.right - (boundaries.right - boundaries.left) / 2 + (2 * checkOff.getWidth() / 3),
-                                 boundaries.top + topPt + (4 * checkOff.getHeight() / 3));
+            int topPt = (btnW + spaceH) * i;
+            dayBoxes[i] = new Rect(0, topPt, boundaries.width(), topPt + btnW);
+            checkSizes[i] = new Rect(
+                                (boundaries.width()) / 2 - (2 * checkOff.getWidth() / 3),
+                                topPt,
+                                boundaries.width() / 2 + (2 * checkOff.getWidth() / 3),
+                                topPt + (4 * checkOff.getHeight() / 3));
         }
     }
 
@@ -102,7 +100,7 @@ class VisualDaysSelector {
         days.reset();
         Canvas canvas = days.getCanvas();
         for(int i = weekStart; i < 7 + weekStart; i++) {
-            RectF dayBox = dayBoxes[i - weekStart];
+            Rect dayBox = dayBoxes[i - weekStart];
             canvas.drawBitmap(
                     (selected & (1 << (i % 7))) != 0 ? checkOn : checkOff,
                     checkDimensions,
@@ -115,7 +113,9 @@ class VisualDaysSelector {
 
     int hitTest(MotionEvent event) {
         for(int i = weekStart; i < 7 + weekStart; i++) {
-            if(dayBoxes[i - weekStart].contains(event.getX(), event.getY()))
+            if(dayBoxes[i - weekStart].contains(
+                    (int)event.getX() - boundaries.left,
+                    (int)event.getY() - boundaries.top))
                 return  i % 7;
         }
         return -1;

@@ -50,7 +50,8 @@ public class ScaleDetectorFactory {
             return new FroyoScaleGestureDetector(ctx, new ScaleGestureDetector.OnScaleGestureListener() {
                 @Override
                 public boolean onScale(ScaleGestureDetector scaleGestureDetector) {
-                    listener.onScale(scaleGestureDetector.getScaleFactor());
+                    if(listener != null)
+                        listener.onScale(scaleGestureDetector.getScaleFactor());
                     return true;
                 }
 
