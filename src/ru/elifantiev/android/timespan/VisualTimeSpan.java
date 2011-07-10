@@ -109,8 +109,8 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
 
     static VisualTimeSpan newInstanceAtValues(TimeSpanGroupEditor parent, float minTop, float minBottom) {
         VisualTimeSpan ret = new VisualTimeSpan(parent);
-        ret.minutesTop = (int) minTop;
-        ret.minutesBottom = (int) minBottom;
+        ret.minutesTop = (int) Math.max(0, minTop);
+        ret.minutesBottom = (int) Math.min(1440, minBottom);
         return ret;
     }
 
@@ -138,12 +138,8 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
     }
 
     void setBounds(int upper, int lower) {
-        minutesTop = upper;
-        minutesBottom = lower;
-        if (minutesTop < 0)
-            minutesTop = 0;
-        if (minutesBottom > 1440)
-            minutesBottom = 1440;
+        minutesTop = Math.max(0, upper);
+        minutesBottom = Math.min(1440, lower);
         invalidate();
     }
 

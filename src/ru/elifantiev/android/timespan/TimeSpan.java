@@ -34,8 +34,8 @@ public class TimeSpan implements Comparable<TimeSpan> {
     }
 
     TimeSpan(int timeFrom, int timeTo) {
-        this.timeFrom = timeFrom;
-        this.timeTo = timeTo;
+        this.timeFrom = Math.max(0, timeFrom);
+        this.timeTo = Math.min(1440, timeTo);
     }
 
     public TimeSpan newTimeSpan(int from, int to) {
