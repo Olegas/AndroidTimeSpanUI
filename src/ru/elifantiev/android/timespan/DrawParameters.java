@@ -24,7 +24,6 @@ final class DrawParameters {
     final static int SIDE_PAD = 7;
     final int TB_PAD;
     final static int KNOB_TOUCH_AREA = 25;
-    final static int MIDDLE_AREA_PAD = 15;
     final int DAY_SELECTOR_AREA_WIDTH;
     final int SCALE_LABEL_TOP_PADDING;
     final float density;

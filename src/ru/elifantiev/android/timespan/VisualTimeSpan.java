@@ -22,7 +22,6 @@ import android.graphics.*;
 import android.view.MotionEvent;
 
 import static ru.elifantiev.android.timespan.DrawParameters.KNOB_TOUCH_AREA;
-import static ru.elifantiev.android.timespan.DrawParameters.MIDDLE_AREA_PAD;
 
 class VisualTimeSpan implements Comparable<VisualTimeSpan> {
 
@@ -39,9 +38,8 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
 
     private float xMiddlePoint;
     private boolean editMode = false;
-    private RectF topKnobBoundary, bottomKnobBoundary, middleArea, fullArea;
-    private Rect boundaries;
-    private Rect bounds = new Rect();
+    private RectF topKnobBoundary, bottomKnobBoundary, middleArea;
+    private Rect boundaries, spanCaptionBounds = new Rect();
 
     private float pixelTop, pixelBottom;
 
@@ -89,7 +87,7 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
 
         this.parent = parent;
 
-        pSpanText.getTextBounds("0", 0, 1, bounds);
+        pSpanText.getTextBounds("0", 0, 1, spanCaptionBounds);
         strokeWidth = pSelectionBoundary.getStrokeWidth();
 
         upArrow = BitmapFactory.decodeResource(parent.getContext().getResources(), R.drawable.arrow_up_float);
@@ -189,55 +187,60 @@ class VisualTimeSpan implements Comparable<VisualTimeSpan> {
                 xMiddlePoint + KNOB_TOUCH_AREA,
                 parent.controlToScreen(pixelBottom) + KNOB_TOUCH_AREA);
 
-        middleArea = new RectF(boundaries.left + MIDDLE_AREA_PAD, Math.max(0, pixelTop) + MIDDLE_AREA_PAD,
-                boundaries.right - MIDDLE_AREA_PAD, Math.min(boundaries.height(), pixelBottom) - MIDDLE_AREA_PAD);
+        middleArea = new RectF(boundaries.left, Math.max(0, pixelTop),
+                boundaries.right, Math.min(boundaries.height(), pixelBottom));
     }
 
     private void drawSelection() {
         fullCanvas.reset();
         scaleArea.reset();
 
-        int minutesSelected = minutesBottom - minutesTop;
+        if(parent.isSpanVisible(this)) {
 
-        Canvas sCanvas = scaleArea.getCanvas();
-        sCanvas.drawRoundRect(
-                new RectF(
-                        0,
-                        pixelTop,
-                        boundaries.width(),
-                        pixelBottom),
-                10f,
-                10f,
-                editMode ? pSelectionBoundaryEdit : pSelectionBoundary);
+            int minutesSelected = minutesBottom - minutesTop;
+
+            Canvas sCanvas = scaleArea.getCanvas();
+            sCanvas.drawRoundRect(
+                    new RectF(
+                            0,
+                            pixelTop,
+                            boundaries.width(),
+                            pixelBottom),
+                    10f,
+                    10f,
+                    editMode ? pSelectionBoundaryEdit : pSelectionBoundary);
 
 
-        sCanvas.drawRoundRect(
-                new RectF(
-                        0 + strokeWidth,
-                        pixelTop + strokeWidth,
-                        boundaries.width() - strokeWidth,
-                        pixelBottom - strokeWidth),
-                10f,
-                10f,
-                pSelection);
+            sCanvas.drawRoundRect(
+                    new RectF(
+                            0 + strokeWidth,
+                            pixelTop + strokeWidth,
+                            boundaries.width() - strokeWidth,
+                            pixelBottom - strokeWidth),
+                    10f,
+                    10f,
+                    pSelection);
 
-        if (editMode) {
-            Canvas fCanvas = fullCanvas.getCanvas();
-            fCanvas.drawBitmap(upArrow, xMiddlePoint - upArrow.getWidth() / 2, parent.controlToScreen(pixelTop) - upArrow.getHeight(), pSelKnob);
-            fCanvas.drawBitmap(downArrow, xMiddlePoint - downArrow.getWidth() / 2, parent.controlToScreen(pixelBottom), pSelKnob);
+            if (editMode) {
+                Canvas fCanvas = fullCanvas.getCanvas();
+                fCanvas.drawBitmap(upArrow, xMiddlePoint - upArrow.getWidth() / 2, parent.controlToScreen(pixelTop) - upArrow.getHeight(), pSelKnob);
+                fCanvas.drawBitmap(downArrow, xMiddlePoint - downArrow.getWidth() / 2, parent.controlToScreen(pixelBottom), pSelKnob);
+            }
+
+            if(middleArea.height() >= spanCaptionBounds.height()) {
+                sCanvas.drawText(
+                        new StringBuilder()
+                                .append(toString())
+                                .append(" (")
+                                .append(minutesSelected / 60)
+                                .append("h ")
+                                .append(minutesSelected % 60)
+                                .append("m)").toString(),
+                        middleArea.centerX(),
+                        middleArea.centerY() + spanCaptionBounds.height() / 2,
+                        pSpanText);
+            }
         }
-
-        sCanvas.drawText(
-                new StringBuilder()
-                        .append(toString())
-                        .append(" (")
-                        .append(minutesSelected / 60)
-                        .append("h ")
-                        .append(minutesSelected % 60)
-                        .append("m)").toString(),
-                middleArea.centerX(),
-                middleArea.centerY() + bounds.height() / 2,
-                pSpanText);
     }
 
     HitTestResult hitTest(MotionEvent event) {
