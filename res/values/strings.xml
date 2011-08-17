@@ -20,4 +20,12 @@
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string name="anytime">Any time</string>
+    <string name="close">Dismiss</string>
+    <string name="edit_help_title">How to use</string>
+    <string name="editor_help_zoom">1. Zoom in/out to change size of a scale.</string>
+    <string name="editor_help_scroll">2. Scroll up/down to move the zoomed scale.</string>
+    <string name="editor_help_addnew">3. Double-tap on a free space to add a new interval here.</string>
+    <string name="editor_help_editmode">4. Long tap on an interval to toggle it\'s edit mode.</string>
+    <string name="editor_help_drag">5. When span is in edit mode you can drag it by it\'s middle to move the whole interval or drag by vertical edges (toucheable areas are indicated by arrows) to change the bounds of an interval.</string>
+    <string name="editor_help_delete">6. When span is in edit use double tap on it to delete.</string>
 </resources>

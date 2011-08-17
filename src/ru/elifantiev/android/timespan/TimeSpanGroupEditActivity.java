@@ -27,6 +27,8 @@ import android.widget.Toast;
 public class TimeSpanGroupEditActivity extends Activity {
 
     final static String GROUP_SPEC_EXTRA = "ru.elifantiev.android.timespan.GROUP_SPEC_EXTRA";
+    final static String SHOW_HELP = "ru.elifantiev.android.timespan.SHOW_HELP";
+    final static int DIALOG_HELP = 1;
     private TimeSpanGroupEditor groupEditor;
     private String initialGroup = "0:0-1440";
 
@@ -60,6 +62,19 @@ public class TimeSpanGroupEditActivity extends Activity {
         }
         else
             finish();
+    }
+
+    @Override
+    protected Dialog onCreateDialog(int id) {
+        Dialog dialog = null;
+        if(id == DIALOG_HELP) {
+            dialog = new Dialog(getApplicationContext());
+
+            dialog.setContentView(R.layout.help_dialog);
+            dialog.setTitle(getString(R.string.edit_help_title));
+
+        }
+        return dialog;
     }
 
     @Override
