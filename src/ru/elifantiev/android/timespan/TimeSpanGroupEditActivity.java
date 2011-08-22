@@ -36,29 +36,32 @@ public class TimeSpanGroupEditActivity extends Activity {
     public void onBackPressed() {
         final TimeSpanGroup g = groupEditor.getValue();
         if(!initialGroup.equals(g.toString())) {
-            if(g.getDayMask() == 0) {
-                Toast.makeText(this, R.string.selectDays, Toast.LENGTH_LONG).show();
-            } else {
-                new AlertDialog.Builder(this)
-                    .setMessage(getString(R.string.saveChanges))
-                    .setCancelable(false)
-                    .setPositiveButton(getString(R.string.yes), new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
+            new AlertDialog.Builder(this)
+                .setMessage(getString(R.string.saveChanges))
+                .setCancelable(false)
+                .setPositiveButton(getString(R.string.yes), new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        if(g.getDayMask() == 0) {
+                            Toast.makeText(
+                                    TimeSpanGroupEditActivity.this,
+                                    R.string.selectDays,
+                                    Toast.LENGTH_LONG).show();
+                        } else {
                             Intent result = new Intent();
                             result.putExtra(GROUP_SPEC_EXTRA, g.toString());
                             setResult(RESULT_OK, result);
                             finish();
                         }
-                    })
-                    .setNegativeButton(getString(R.string.no), new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            dialog.cancel();
-                            finish();
-                        }
-                    })
-                    .create()
-                    .show();
-            }
+                    }
+                })
+                .setNegativeButton(getString(R.string.no), new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.cancel();
+                        finish();
+                    }
+                })
+                .create()
+                .show();
         }
         else
             finish();
