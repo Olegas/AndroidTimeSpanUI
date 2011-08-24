@@ -38,7 +38,7 @@ public class TimeSpanGroupEditActivity extends Activity {
         if(!initialGroup.equals(g.toString())) {
             new AlertDialog.Builder(this)
                 .setMessage(getString(R.string.saveChanges))
-                .setCancelable(false)
+                .setCancelable(true)
                 .setPositiveButton(getString(R.string.yes), new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         if(g.getDayMask() == 0) {
