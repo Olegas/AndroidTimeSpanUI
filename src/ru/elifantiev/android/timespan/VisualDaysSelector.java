@@ -24,7 +24,7 @@ import android.view.MotionEvent;
 class VisualDaysSelector {
 
     private final DrawLayer days = new DrawLayer();
-    private final Paint pText;
+    private final Paint pText, pGrayedText;
 
     private final Rect[] dayBoxes = new Rect[7];
     private final Rect[] checkSizes = new Rect[7];
@@ -34,6 +34,7 @@ class VisualDaysSelector {
     private final String[] labels;
     private final int weekStart;
     private final Rect checkDimensions;
+    private int availMask = 127;
 
     VisualDaysSelector(Context ctx) {
 
@@ -51,6 +52,9 @@ class VisualDaysSelector {
         pText.setAntiAlias(true);
         pText.setColor(0xFFFFFFFF);
         pText.setStyle(Paint.Style.FILL_AND_STROKE);
+
+        pGrayedText = new Paint(pText);
+        pGrayedText.setColor(0xFF444444);
 
         weekStart = ctx.getResources().getInteger(ru.elifantiev.android.timespan.R.integer.weekStartOffset);
 
@@ -101,13 +105,18 @@ class VisualDaysSelector {
         Canvas canvas = days.getCanvas();
         for(int i = weekStart; i < 7 + weekStart; i++) {
             Rect dayBox = dayBoxes[i - weekStart];
+            Paint paint = ((1 << (i % 7)) & availMask) > 0 ? pText : pGrayedText;
             canvas.drawBitmap(
                     (selected & (1 << (i % 7))) != 0 ? checkOn : checkOff,
                     checkDimensions,
                     checkSizes[i - weekStart],
-                    pText);
+                    paint);
             //canvas.drawRect(dayBox, (selected & (1 << i)) != 0 ? pSelected : pBoundary);
-            canvas.drawText(labels[i % 7], dayBox.centerX(), dayBox.centerY() + pText.getTextSize(), pText);
+            canvas.drawText(
+                    labels[i % 7],
+                    dayBox.centerX(),
+                    dayBox.centerY() + pText.getTextSize(),
+                    paint);
         }
     }
 
@@ -123,7 +132,7 @@ class VisualDaysSelector {
 
     boolean handleTap(MotionEvent event) {
         int what = hitTest(event);
-        if(what >= 0) {
+        if(what >= 0 &&  ((1 << what) & availMask) > 0) {
             selected ^= (1 << what);
             drawDays();
             return true;
@@ -138,6 +147,10 @@ class VisualDaysSelector {
 
     int getSelectedDays() {
         return selected;
+    }
+
+    void setAvailableDays(int dayMask) {
+        availMask = dayMask;
     }
 
 }

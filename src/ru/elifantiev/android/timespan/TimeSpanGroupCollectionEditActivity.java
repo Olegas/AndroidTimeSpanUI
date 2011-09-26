@@ -16,23 +16,24 @@
 
 package ru.elifantiev.android.timespan;
 
-import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.*;
+import android.view.ContextMenu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.*;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.TreeSet;
 
 public class TimeSpanGroupCollectionEditActivity extends ListActivity {
 
     static final String GROUP_SPEC_EXTRA = "ru.elifantiev.android.timespan.GROUP_SPEC_EXTRA";
+    public static final String DAYS_MASK_EXTRA = "ru.elifantiev.android.timespan.DAYS_MASK_EXTRA";
 
     private List<TimeSpanGroup> groupCollection = new ArrayList<TimeSpanGroup>();
 
@@ -91,11 +92,14 @@ public class TimeSpanGroupCollectionEditActivity extends ListActivity {
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        final Intent callee = getIntent();
+
         setContentView(R.layout.time_span_group_collection_editor);
 
         btnAddNew = (Button)findViewById(R.id.btnAddGroup);
 
-        String spec = getIntent().getStringExtra(GROUP_SPEC_EXTRA);
+        String spec = callee.getStringExtra(GROUP_SPEC_EXTRA);
         if(spec != null && !"".equals(spec))
             groupCollection.addAll(TimeSpanGroupCollection.valueOf(spec));
 
@@ -111,6 +115,7 @@ public class TimeSpanGroupCollectionEditActivity extends ListActivity {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 Intent call = new Intent(TimeSpanGroupCollectionEditActivity.this, TimeSpanGroupEditActivity.class);
+                call.putExtra(TimeSpanGroupEditActivity.DAY_MASK_EXTRA, callee.getIntExtra(DAYS_MASK_EXTRA, 0));
                 call.putExtra(TimeSpanGroupEditActivity.GROUP_SPEC_EXTRA, groupCollection.get(i).toString());
                 startActivityForResult(call, i + 1);
             }
@@ -122,6 +127,7 @@ public class TimeSpanGroupCollectionEditActivity extends ListActivity {
             @Override
             public void onClick(View view) {
                 Intent call = new Intent(TimeSpanGroupCollectionEditActivity.this, TimeSpanGroupEditActivity.class);
+                call.putExtra(TimeSpanGroupEditActivity.DAY_MASK_EXTRA, callee.getIntExtra(DAYS_MASK_EXTRA, 0));
                 startActivityForResult(call, 0);
             }
         });

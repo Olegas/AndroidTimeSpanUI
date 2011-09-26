@@ -419,6 +419,10 @@ public class TimeSpanGroupEditor extends View implements
         }
     }
 
+    public void setAvailableDays(int dayMask) {
+        daysSelector.setAvailableDays(dayMask);
+    }
+
     public void setValue(TimeSpanGroup group) {
         if(group == null)
             throw new IllegalArgumentException("Null group specified");

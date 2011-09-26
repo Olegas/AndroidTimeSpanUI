@@ -36,6 +36,7 @@ public class TimeSpanSelector extends TextView {
     private List<TimeSpanGroup> groups = new ArrayList<TimeSpanGroup>();
     private OnChangeListener listener = null;
     private ActivityRequestHandler activityRequestHandler = null;
+    private int dayMask = 127;
 
     public TimeSpanSelector(Context context) {
         super(context);
@@ -65,6 +66,9 @@ public class TimeSpanSelector extends TextView {
                 call.putExtra(
                         TimeSpanGroupCollectionEditActivity.GROUP_SPEC_EXTRA,
                         TimeSpanGroupCollection.toString(groups));
+                call.putExtra(
+                        TimeSpanGroupCollectionEditActivity.DAYS_MASK_EXTRA,
+                        dayMask);
                 if(activityRequestHandler != null)
                     activityRequestHandler.requestActivityStart(call, EDIT_TIME_SPEC_REQUEST);
             }
@@ -114,6 +118,10 @@ public class TimeSpanSelector extends TextView {
             }
         }
         return false;
+    }
+
+    public void setAvailableDays(int dayMask) {
+        this.dayMask = dayMask;
     }
 
     public interface ActivityRequestHandler {

@@ -27,6 +27,7 @@ import android.widget.Toast;
 public class TimeSpanGroupEditActivity extends Activity {
 
     final static String GROUP_SPEC_EXTRA = "ru.elifantiev.android.timespan.GROUP_SPEC_EXTRA";
+    final static String DAY_MASK_EXTRA = "ru.elifantiev.android.timespan.DAY_MASK_EXTRA";
     final static String SHOW_HELP = "ru.elifantiev.android.timespan.SHOW_HELP";
     final static int DIALOG_HELP = 1;
     private TimeSpanGroupEditor groupEditor;
@@ -92,5 +93,11 @@ public class TimeSpanGroupEditActivity extends Activity {
             groupEditor.setValue(TimeSpanGroup.valueOf(spanSpec));
             initialGroup = groupEditor.getValue().toString();
         }
+
+        int dayMask = call.getIntExtra(DAY_MASK_EXTRA, 0);
+        if(dayMask > 0) {
+            groupEditor.setAvailableDays(dayMask);
+        }
+
     }
 }
